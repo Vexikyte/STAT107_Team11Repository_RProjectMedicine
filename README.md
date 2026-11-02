@@ -14,6 +14,8 @@ This GitHub Repo is dedicated for Team 11's STAT107 R Project. Team members are 
 |---|---|
 | `data/ARQ_F.xpt` | NHANES 2009-2010 arthritis questionnaire |
 | `data/ARX_F.xpt` | NHANES 2009-2010 arthritis body measures (spinal exam) |
+| `data/DEMO_F.xpt` | NHANES 2009-2010 demographics and survey design variables |
+| `data/BMX_F.xpt` | NHANES 2009-2010 body measures (height, weight, BMI) |
 | `00_requirements.R` | Installs and loads the required packages |
 | `01_funct_DataIntegration.R` | Function for merging the datasets |
 | `02_funct_DataCleaning.R` | Functions for cleaning the data |

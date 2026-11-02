@@ -86,9 +86,45 @@ For now it's structurally consistent and the integration was successful.
 Certainly unclean, but further checks will establish if that renders the database infeasible for research.
 There's a decent chance there's too many holes to make meaningful observations.
 
+## Adding Demographics and Body Measures
+
+Spinal mobility is related to age, sex and height, so a fair comparison between participants needs those variables.
+Neither arthritis dataset contains them, so we add two more NHANES 2009-2010 datasets.
+`DEMO_F.xpt` holds age, sex, race/ethnicity, pregnancy status and the survey design variables, and `BMX_F.xpt` holds height, weight and BMI.
+
+```{r}
+demo_data <- read_xpt("data/DEMO_F.xpt")
+body_data <- read_xpt("data/BMX_F.xpt")
+
+dim(demo_data)
+dim(body_data)
+```
+
+These datasets cover the whole survey, including children, so they are much larger than our arthritis data.
+Before merging, we confirm that their IDs are unique and that every participant in `raw_data` appears in both.
+
+```{r}
+sum(duplicated(demo_data$SEQN))
+sum(duplicated(body_data$SEQN))
+
+sum(!raw_data$SEQN %in% demo_data$SEQN)
+sum(!raw_data$SEQN %in% body_data$SEQN)
+```
+
+All four results are 0, so joining these datasets to `raw_data` will not remove anyone.
+
+```{r}
+raw_data <- raw_data %>%
+  merge_datasets(demo_data, "SEQN") %>%
+  merge_datasets(body_data, "SEQN")
+
+dim(raw_data)
+n_distinct(raw_data$SEQN)
+```
+
 ## Cleaning Steps
 
-The merged data has 137 columns, so we now reduce it to the variables that matter for studying back pain and spinal mobility, and fix how those variables are coded.
+The merged data now has 201 columns, so we reduce it to the variables that matter for studying back pain and spinal mobility, and fix how those variables are coded.
 All of the cleaning functions used below are in `02_funct_DataCleaning.R`.
 
 ```{r}
@@ -151,7 +187,7 @@ We keep status 2 participants, because their available measurements are still va
 
 ### Step 3: Keep the variables of interest
 
-We keep the main back pain questions, the pain diagram sites, the symptom questions, three related diagnoses and the spinal measurements.
+We keep the main back pain questions, the pain diagram sites, the symptom questions, three related diagnoses, the spinal measurements, demographics, body measures and the survey design variables.
 
 We leave out `ARXXDIST` because it records where the chest was measured and not how much the chest moved.
 We also leave out the comment columns, such as `ARIO2WD`, because they do not contain measurements.
@@ -166,7 +202,10 @@ selected_data <- raw_data %>%
     ARQ040, ARQ050, ARQ060, ARQ070, ARQ073, ARQ080, ARQ100, ARQ110,
     ARQ125C, ARQ125D, ARQ125E,
     ARDEXSTS,
-    ARXO2WD, ARXCCIN, ARXCCEX, ARDDINEX, ARDLFTL
+    ARXO2WD, ARXCCIN, ARXCCEX, ARDDINEX, ARDLFTL,
+    RIDAGEYR, RIAGENDR, RIDRETH1, RIDEXPRG,
+    BMXHT, BMXWT, BMXBMI,
+    WTMEC2YR, SDMVPSU, SDMVSTRA
   )
 
 dim(selected_data)
@@ -176,7 +215,7 @@ dim(selected_data)
 
 These are stored as 7 and 9 in the survey columns, which could be mistaken for real answers.
 We set them to `NA`, and only in the columns where those codes apply.
-The ID, the pain site columns and the exam measurements are not included, since 7 and 9 can be real values in those columns.
+The ID, the pain site columns, the exam measurements and the demographic and body measure columns are not included, since 7 and 9 do not mean Refused or Don't know in those columns.
 
 ```{r}
 survey_cols <- c(
@@ -260,7 +299,32 @@ clean_data <- recoded_data %>%
     chest_inhale_cm = ARXCCIN,
     chest_exhale_cm = ARXCCEX,
     chest_expansion_cm = ARDDINEX,
-    lumbar_flexion_cm = ARDLFTL
+    lumbar_flexion_cm = ARDLFTL,
+
+    # Demographics
+    age_years = RIDAGEYR,
+    sex = factor(RIAGENDR, levels = 1:2, labels = c("Male", "Female")),
+    race_ethnicity = factor(
+      RIDRETH1,
+      levels = 1:5,
+      labels = c("Mexican American", "Other Hispanic", "Non-Hispanic White",
+                 "Non-Hispanic Black", "Other or Multi-Racial")
+    ),
+    pregnancy_status = factor(
+      RIDEXPRG,
+      levels = 1:3,
+      labels = c("Pregnant", "Not pregnant", "Could not be determined")
+    ),
+
+    # Body measures
+    height_cm = BMXHT,
+    weight_kg = BMXWT,
+    bmi = BMXBMI,
+
+    # Survey design variables, needed for national estimates
+    exam_weight = WTMEC2YR,
+    survey_psu = SDMVPSU,
+    survey_stratum = SDMVSTRA
   )
 
 glimpse(clean_data)
@@ -304,7 +368,8 @@ Then we check the range of each measurement.
 ```{r}
 summarize_measures(
   clean_data,
-  c("occiput_wall_cm", "chest_expansion_cm", "lumbar_flexion_cm")
+  c("occiput_wall_cm", "chest_expansion_cm", "lumbar_flexion_cm",
+    "age_years", "height_cm", "weight_kg", "bmi")
 )
 ```
 
@@ -319,6 +384,14 @@ clean_data %>%
 ```
 
 A few values are unusually high, but we cannot prove they are errors, so we keep them for now and will test whether they change our results during analysis.
+
+Finally, we count the participants who were pregnant at the exam, since pregnancy can affect body measures and chest expansion.
+
+```{r}
+count(clean_data, pregnancy_status)
+```
+
+We keep these participants for now and record their status, so the team can decide whether to exclude them once the research question is final.
 
 ### Step 7: Save the cleaned data
 

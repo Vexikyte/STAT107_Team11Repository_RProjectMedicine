@@ -468,9 +468,47 @@ integration was successful. Certainly unclean, but further checks will
 establish if that renders the database infeasible for research. There’s
 a decent chance there’s too many holes to make meaningful
 observations.</p>
+<div id="adding-demographics-and-body-measures" class="section level2">
+<h2>Adding Demographics and Body Measures</h2>
+<p>Spinal mobility is related to age, sex and height, so a fair
+comparison between participants needs those variables. Neither arthritis
+dataset contains them, so we add two more NHANES 2009-2010 datasets.
+<code>DEMO_F.xpt</code> holds age, sex, race/ethnicity, pregnancy status
+and the survey design variables, and <code>BMX_F.xpt</code> holds
+height, weight and BMI.</p>
+<pre class="r"><code>demo_data &lt;- read_xpt(&quot;data/DEMO_F.xpt&quot;)
+body_data &lt;- read_xpt(&quot;data/BMX_F.xpt&quot;)
+
+dim(demo_data)</code></pre>
+<pre><code>## [1] 10537    43</code></pre>
+<pre class="r"><code>dim(body_data)</code></pre>
+<pre><code>## [1] 10253    23</code></pre>
+<p>These datasets cover the whole survey, including children, so they
+are much larger than our arthritis data. Before merging, we confirm that
+their IDs are unique and that every participant in <code>raw_data</code>
+appears in both.</p>
+<pre class="r"><code>sum(duplicated(demo_data$SEQN))</code></pre>
+<pre><code>## [1] 0</code></pre>
+<pre class="r"><code>sum(duplicated(body_data$SEQN))</code></pre>
+<pre><code>## [1] 0</code></pre>
+<pre class="r"><code>sum(!raw_data$SEQN %in% demo_data$SEQN)</code></pre>
+<pre><code>## [1] 0</code></pre>
+<pre class="r"><code>sum(!raw_data$SEQN %in% body_data$SEQN)</code></pre>
+<pre><code>## [1] 0</code></pre>
+<p>All four results are 0, so joining these datasets to
+<code>raw_data</code> will not remove anyone.</p>
+<pre class="r"><code>raw_data &lt;- raw_data %&gt;%
+  merge_datasets(demo_data, &quot;SEQN&quot;) %&gt;%
+  merge_datasets(body_data, &quot;SEQN&quot;)
+
+dim(raw_data)</code></pre>
+<pre><code>## [1] 5001  201</code></pre>
+<pre class="r"><code>n_distinct(raw_data$SEQN)</code></pre>
+<pre><code>## [1] 5001</code></pre>
+</div>
 <div id="cleaning-steps" class="section level2">
 <h2>Cleaning Steps</h2>
-<p>The merged data has 137 columns, so we now reduce it to the variables
+<p>The merged data now has 201 columns, so we reduce it to the variables
 that matter for studying back pain and spinal mobility, and fix how
 those variables are coded. All of the cleaning functions used below are
 in <code>02_funct_DataCleaning.R</code>.</p>
@@ -543,8 +581,8 @@ measurement it needs.</p>
 <div id="step-3-keep-the-variables-of-interest" class="section level3">
 <h3>Step 3: Keep the variables of interest</h3>
 <p>We keep the main back pain questions, the pain diagram sites, the
-symptom questions, three related diagnoses and the spinal
-measurements.</p>
+symptom questions, three related diagnoses, the spinal measurements,
+demographics, body measures and the survey design variables.</p>
 <p>We leave out <code>ARXXDIST</code> because it records where the chest
 was measured and not how much the chest moved. We also leave out the
 comment columns, such as <code>ARIO2WD</code>, because they do not
@@ -558,19 +596,23 @@ contain measurements.</p>
     ARQ040, ARQ050, ARQ060, ARQ070, ARQ073, ARQ080, ARQ100, ARQ110,
     ARQ125C, ARQ125D, ARQ125E,
     ARDEXSTS,
-    ARXO2WD, ARXCCIN, ARXCCEX, ARDDINEX, ARDLFTL
+    ARXO2WD, ARXCCIN, ARXCCEX, ARDDINEX, ARDLFTL,
+    RIDAGEYR, RIAGENDR, RIDRETH1, RIDEXPRG,
+    BMXHT, BMXWT, BMXBMI,
+    WTMEC2YR, SDMVPSU, SDMVSTRA
   )
 
 dim(selected_data)</code></pre>
-<pre><code>## [1] 5001   27</code></pre>
+<pre><code>## [1] 5001   37</code></pre>
 </div>
 <div id="step-4-replace-the-refused-and-dont-know-codes" class="section level3">
 <h3>Step 4: Replace the Refused and Don’t Know codes</h3>
 <p>These are stored as 7 and 9 in the survey columns, which could be
 mistaken for real answers. We set them to <code>NA</code>, and only in
-the columns where those codes apply. The ID, the pain site columns and
-the exam measurements are not included, since 7 and 9 can be real values
-in those columns.</p>
+the columns where those codes apply. The ID, the pain site columns, the
+exam measurements and the demographic and body measure columns are not
+included, since 7 and 9 do not mean Refused or Don’t know in those
+columns.</p>
 <pre class="r"><code>survey_cols &lt;- c(
   &quot;ARQ010&quot;, &quot;ARQ040&quot;, &quot;ARQ050&quot;, &quot;ARQ060&quot;, &quot;ARQ070&quot;, &quot;ARQ073&quot;, &quot;ARQ080&quot;,
   &quot;ARQ100&quot;, &quot;ARQ110&quot;, &quot;ARQ125C&quot;, &quot;ARQ125D&quot;, &quot;ARQ125E&quot;
@@ -655,12 +697,37 @@ questionnaire documentation.</p>
     chest_inhale_cm = ARXCCIN,
     chest_exhale_cm = ARXCCEX,
     chest_expansion_cm = ARDDINEX,
-    lumbar_flexion_cm = ARDLFTL
+    lumbar_flexion_cm = ARDLFTL,
+
+    # Demographics
+    age_years = RIDAGEYR,
+    sex = factor(RIAGENDR, levels = 1:2, labels = c(&quot;Male&quot;, &quot;Female&quot;)),
+    race_ethnicity = factor(
+      RIDRETH1,
+      levels = 1:5,
+      labels = c(&quot;Mexican American&quot;, &quot;Other Hispanic&quot;, &quot;Non-Hispanic White&quot;,
+                 &quot;Non-Hispanic Black&quot;, &quot;Other or Multi-Racial&quot;)
+    ),
+    pregnancy_status = factor(
+      RIDEXPRG,
+      levels = 1:3,
+      labels = c(&quot;Pregnant&quot;, &quot;Not pregnant&quot;, &quot;Could not be determined&quot;)
+    ),
+
+    # Body measures
+    height_cm = BMXHT,
+    weight_kg = BMXWT,
+    bmi = BMXBMI,
+
+    # Survey design variables, needed for national estimates
+    exam_weight = WTMEC2YR,
+    survey_psu = SDMVPSU,
+    survey_stratum = SDMVSTRA
   )
 
 glimpse(clean_data)</code></pre>
 <pre><code>## Rows: 5,001
-## Columns: 27
+## Columns: 37
 ## $ id                     &lt;dbl&gt; 51624, 51628, 51629, 51630, 51643, 51645, 51647…
 ## $ symptoms_asked         &lt;lgl&gt; TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE, F…
 ## $ back_pain              &lt;fct&gt; Yes, Yes, No, Yes, No, No, No, No, No, No, No, …
@@ -687,7 +754,17 @@ glimpse(clean_data)</code></pre>
 ## $ chest_inhale_cm        &lt;dbl&gt; 103.0, 109.5, 103.2, 104.5, 111.3, NA, 85.9, 98…
 ## $ chest_exhale_cm        &lt;dbl&gt; 98.6, 107.0, 98.0, 100.3, 104.5, NA, 81.0, 94.4…
 ## $ chest_expansion_cm     &lt;dbl&gt; 4.4, 2.5, 5.2, 4.2, 6.8, NA, 4.9, 4.1, 4.7, 6.2…
-## $ lumbar_flexion_cm      &lt;dbl&gt; NA, 1.8, 4.1, 2.9, 6.3, NA, 2.8, 6.0, 3.3, 2.1,…</code></pre>
+## $ lumbar_flexion_cm      &lt;dbl&gt; NA, 1.8, 4.1, 2.9, 6.3, NA, 2.8, 6.0, 3.3, 2.1,…
+## $ age_years              &lt;dbl&gt; 34, 60, 26, 49, 42, 66, 45, 28, 44, 66, 49, 58,…
+## $ sex                    &lt;fct&gt; Male, Female, Male, Female, Female, Male, Femal…
+## $ race_ethnicity         &lt;fct&gt; Non-Hispanic White, Non-Hispanic Black, Mexican…
+## $ pregnancy_status       &lt;fct&gt; NA, NA, NA, NA, Not pregnant, NA, NA, NA, NA, N…
+## $ height_cm              &lt;dbl&gt; 164.7, 166.0, 173.0, 168.4, 164.3, 171.3, 166.7…
+## $ weight_kg              &lt;dbl&gt; 87.4, 116.8, 97.6, 86.7, 107.7, 82.9, 75.7, 79.…
+## $ bmi                    &lt;dbl&gt; 32.22, 42.39, 32.61, 30.57, 39.90, 28.25, 27.24…
+## $ exam_weight            &lt;dbl&gt; 81528.772, 21000.339, 22633.582, 74112.487, 407…
+## $ survey_psu             &lt;dbl&gt; 1, 2, 1, 2, 2, 1, 2, 1, 2, 2, 1, 2, 1, 1, 1, 2,…
+## $ survey_stratum         &lt;dbl&gt; 83, 75, 88, 85, 75, 75, 78, 76, 79, 86, 82, 77,…</code></pre>
 </div>
 <div id="step-6-check-the-cleaned-data" class="section level3">
 <h3>Step 6: Check the cleaned data</h3>
@@ -723,14 +800,19 @@ minus the exhale measurement. This should return <code>TRUE</code>.</p>
 <p>Then we check the range of each measurement.</p>
 <pre class="r"><code>summarize_measures(
   clean_data,
-  c(&quot;occiput_wall_cm&quot;, &quot;chest_expansion_cm&quot;, &quot;lumbar_flexion_cm&quot;)
+  c(&quot;occiput_wall_cm&quot;, &quot;chest_expansion_cm&quot;, &quot;lumbar_flexion_cm&quot;,
+    &quot;age_years&quot;, &quot;height_cm&quot;, &quot;weight_kg&quot;, &quot;bmi&quot;)
 )</code></pre>
-<pre><code>## # A tibble: 3 × 6
+<pre><code>## # A tibble: 7 × 6
 ##   measure                n missing   min median   max
 ##   &lt;chr&gt;              &lt;int&gt;   &lt;int&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;
-## 1 chest_expansion_cm  4615     386     0   4.30  18.5
-## 2 lumbar_flexion_cm   4665     336     0   3.8   11  
-## 3 occiput_wall_cm     4938      63     0   0     16.5</code></pre>
+## 1 age_years           5001       0  20    44     69  
+## 2 bmi                 4962      39  15.0  28.2   84.9
+## 3 chest_expansion_cm  4615     386   0     4.30  18.5
+## 4 height_cm           4968      33 123.  167.   203. 
+## 5 lumbar_flexion_cm   4665     336   0     3.8   11  
+## 6 occiput_wall_cm     4938      63   0     0     16.5
+## 7 weight_kg           4965      36  36.1  79.3  231.</code></pre>
 <p>Most participants have an occiput-to-wall distance of 0, which is the
 normal result, so this variable is very skewed. The highest chest
 expansion values stand out, so we list them.</p>
@@ -754,6 +836,19 @@ expansion values stand out, so we list them.</p>
 <p>A few values are unusually high, but we cannot prove they are errors,
 so we keep them for now and will test whether they change our results
 during analysis.</p>
+<p>Finally, we count the participants who were pregnant at the exam,
+since pregnancy can affect body measures and chest expansion.</p>
+<pre class="r"><code>count(clean_data, pregnancy_status)</code></pre>
+<pre><code>## # A tibble: 4 × 2
+##   pregnancy_status            n
+##   &lt;fct&gt;                   &lt;int&gt;
+## 1 Pregnant                   68
+## 2 Not pregnant             1266
+## 3 Could not be determined    43
+## 4 &lt;NA&gt;                     3624</code></pre>
+<p>We keep these participants for now and record their status, so the
+team can decide whether to exclude them once the research question is
+final.</p>
 </div>
 <div id="step-7-save-the-cleaned-data" class="section level3">
 <h3>Step 7: Save the cleaned data</h3>
