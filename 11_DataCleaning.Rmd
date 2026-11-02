@@ -1,10 +1,10 @@
 ---
-title: "DataExploration"
+title: "Data Cleaning"
 output: html_document
 date: "2026-10-30"
 ---
 
-Set your Working Direction from Session to the Repository Folder.
+Set your Working Directory from Session to the Repository Folder.
 
 ```{r setup, include=FALSE}
 
@@ -36,7 +36,7 @@ A few checks need to be ran to determine if the two databases can be combined fo
 | Q_Data: A dataset featuring questionnaire responses for several experiences and attributes pertaining to arthritis.
 | X_Data: Arthritis physical measurements of the same patients that also covers various health data.
 
-The idea is to combine the two to evaluate patients will full coverage for said data, since both inquiries and examinations can be scrutinized for trends and relationships.
+The idea is to combine the two to evaluate patients with full coverage for said data, since both inquiries and examinations can be scrutinized for trends and relationships.
 
 ```{r}
 "SEQN" %in% names(q_data)
@@ -50,7 +50,7 @@ sum(duplicated(x_data$SEQN))
 ```
 
 The datasets are essentially sibling datasets.
-They share the same identifier column 'SEQN', and as checked, all of the identifiers have available matches for a merge.
+They share the same identifier column 'SEQN', and as checked, the identifiers are complete and unique within each dataset.
 We also check for potential edge cases, such as potentially redundant participants that make up the observations.
 Since all returns TRUE or 0, we know these shouldn't be problematic.
 
@@ -86,19 +86,244 @@ For now it's structurally consistent and the integration was successful.
 Certainly unclean, but further checks will establish if that renders the database infeasible for research.
 There's a decent chance there's too many holes to make meaningful observations.
 
-```{r}
+## Cleaning Steps
 
+The merged data has 137 columns, so we now reduce it to the variables that matter for studying back pain and spinal mobility, and fix how those variables are coded.
+All of the cleaning functions used below are in `02_funct_DataCleaning.R`.
+
+```{r}
+source("02_funct_DataCleaning.R")
 ```
 
+### Step 1: Check who answered the follow-up questions
 
+Blank values in this survey do not all mean the same thing.
+Most of them are skip patterns: a participant who reported no chronic back pain was never asked about their symptoms, so those values are not truly missing.
+The table below compares chronic back pain (`ARQ010`) with whether the participant reached the symptom questions (`ARQ040`).
 
+```{r}
+raw_data %>%
+  mutate(reached_symptom_questions = !is.na(ARQ040)) %>%
+  count(ARQ010, reached_symptom_questions)
+```
 
+Everyone who answered No (2) skipped these questions, as designed.
+Among those who answered Yes (1), a small group also skipped them.
+The next table shows why.
 
+```{r}
+raw_data %>%
+  filter(ARQ010 == 1, is.na(ARQ040)) %>%
+  summarize(
+    participants     = n(),
+    marked_hip_only  = sum(!is.na(ARQ020F) & is.na(ARQ020G)),
+    marked_ribs_only = sum(is.na(ARQ020F) & !is.na(ARQ020G)),
+    marked_both      = sum(!is.na(ARQ020F) & !is.na(ARQ020G))
+  )
+```
 
+These participants only marked the hip or rib cage on the pain diagram, so the survey did not ask them about their symptoms.
+We record this in `symptoms_asked` so that they are not confused with participants who answered "No" to a symptom.
 
+```{r}
+raw_data <- raw_data %>%
+  mutate(symptoms_asked = !is.na(ARQ040))
+```
 
+### Step 2: Check the exam status
 
+`ARDEXSTS` describes how much of the spinal exam each participant finished.
+We count the measurements available at each exam status.
 
+```{r}
+raw_data %>%
+  group_by(ARDEXSTS) %>%
+  summarize(
+    participants      = n(),
+    has_occiput_wall  = sum(!is.na(ARXO2WD)),
+    has_chest_exp     = sum(!is.na(ARDDINEX)),
+    has_lumbar_flex   = sum(!is.na(ARDLFTL))
+  )
+```
 
+Status 1 participants have all three measurements, status 2 participants have some of them, and status 3 participants have none.
+We keep status 2 participants, because their available measurements are still valid, and each later analysis will use whoever has the measurement it needs.
 
+### Step 3: Keep the variables of interest
 
+We keep the main back pain questions, the pain diagram sites, the symptom questions, three related diagnoses and the spinal measurements.
+
+We leave out `ARXXDIST` because it records where the chest was measured and not how much the chest moved.
+We also leave out the comment columns, such as `ARIO2WD`, because they do not contain measurements.
+
+```{r}
+selected_data <- raw_data %>%
+  select(
+    SEQN,
+    symptoms_asked,
+    ARQ010,
+    ARQ020A:ARQ020G,
+    ARQ040, ARQ050, ARQ060, ARQ070, ARQ073, ARQ080, ARQ100, ARQ110,
+    ARQ125C, ARQ125D, ARQ125E,
+    ARDEXSTS,
+    ARXO2WD, ARXCCIN, ARXCCEX, ARDDINEX, ARDLFTL
+  )
+
+dim(selected_data)
+```
+
+### Step 4: Replace the Refused and Don't Know codes
+
+These are stored as 7 and 9 in the survey columns, which could be mistaken for real answers.
+We set them to `NA`, and only in the columns where those codes apply.
+The ID, the pain site columns and the exam measurements are not included, since 7 and 9 can be real values in those columns.
+
+```{r}
+survey_cols <- c(
+  "ARQ010", "ARQ040", "ARQ050", "ARQ060", "ARQ070", "ARQ073", "ARQ080",
+  "ARQ100", "ARQ110", "ARQ125C", "ARQ125D", "ARQ125E"
+)
+
+recoded_data <- recode_special_codes(selected_data, survey_cols)
+
+# Number of refused or don't know answers replaced in each column
+colSums(is.na(recoded_data[survey_cols])) -
+  colSums(is.na(selected_data[survey_cols]))
+```
+
+### Step 5: Rename variables and convert categories to factors
+
+The NHANES column names are hard to read and the categories are stored as numbers.
+We give each variable a descriptive name and turn the categories into labelled factors, using the codes from the NHANES questionnaire documentation.
+
+```{r}
+clean_data <- recoded_data %>%
+  transmute(
+    id = SEQN,
+    symptoms_asked,
+
+    # Back pain and the pain diagram
+    back_pain = label_yes_no(ARQ010),
+    site_neck       = mark_pain_site(ARQ020A, back_pain),
+    site_upper_back = mark_pain_site(ARQ020B, back_pain),
+    site_mid_back   = mark_pain_site(ARQ020C, back_pain),
+    site_low_back   = mark_pain_site(ARQ020D, back_pain),
+    site_buttocks   = mark_pain_site(ARQ020E, back_pain),
+    site_hip        = mark_pain_site(ARQ020F, back_pain),
+    site_rib_cage   = mark_pain_site(ARQ020G, back_pain),
+
+    # Symptom questions
+    morning_stiffness = factor(
+      ARQ040,
+      levels = c(6, 1, 2, 3, 4, 5),
+      labels = c("None", "Under 10 min", "10-30 min", "31-60 min",
+                 "1-4 hours", "Over 4 hours"),
+      ordered = TRUE
+    ),
+    pain_during_day = factor(
+      ARQ050,
+      levels = 1:4,
+      labels = c("Increases", "Decreases", "Stays the same", "Varies")
+    ),
+    pain_with_rest = factor(
+      ARQ060,
+      levels = 1:5,
+      labels = c("Increases", "Decreases", "Stays the same", "Varies",
+                 "No pain with rest or sleep")
+    ),
+    pain_wakes_at_night = label_yes_no(ARQ070),
+    wakes_after_4_hours = factor(
+      ARQ073,
+      levels = 1:3,
+      labels = c("Yes", "No", "Sleeps under 4 hours")
+    ),
+    better_with_exercise = factor(
+      ARQ080,
+      levels = 1:3,
+      labels = c("Yes", "No", "Does not do these activities")
+    ),
+    buttock_pain_switches = label_yes_no(ARQ100),
+
+    # Other conditions
+    heel_pain = label_yes_no(ARQ110),
+    ulcerative_colitis = label_yes_no(ARQ125C),
+    crohns_disease = label_yes_no(ARQ125D),
+    ankylosing_spondylitis = label_yes_no(ARQ125E),
+
+    # Spinal exam, all in centimeters
+    exam_status = factor(
+      ARDEXSTS,
+      levels = 1:3,
+      labels = c("Complete", "Partial", "Not done")
+    ),
+    occiput_wall_cm = ARXO2WD,
+    chest_inhale_cm = ARXCCIN,
+    chest_exhale_cm = ARXCCEX,
+    chest_expansion_cm = ARDDINEX,
+    lumbar_flexion_cm = ARDLFTL
+  )
+
+glimpse(clean_data)
+```
+
+### Step 6: Check the cleaned data
+
+First, we confirm that the row count did not change, that IDs are still unique, and that the factor conversion did not lose any real answers.
+A value is only lost if it is `NA` after conversion but not before, so each number below should be 0.
+
+```{r}
+nrow(clean_data) == nrow(raw_data)
+n_distinct(clean_data$id) == nrow(clean_data)
+
+c(
+  back_pain         = sum(is.na(clean_data$back_pain) &
+                            !is.na(recoded_data$ARQ010)),
+  morning_stiffness = sum(is.na(clean_data$morning_stiffness) &
+                            !is.na(recoded_data$ARQ040)),
+  pain_with_rest    = sum(is.na(clean_data$pain_with_rest) &
+                            !is.na(recoded_data$ARQ060)),
+  exercise          = sum(is.na(clean_data$better_with_exercise) &
+                            !is.na(recoded_data$ARQ080))
+)
+```
+
+Next, we confirm that chest expansion equals the inhale measurement minus the exhale measurement.
+This should return `TRUE`.
+
+```{r}
+all.equal(
+  clean_data$chest_expansion_cm,
+  clean_data$chest_inhale_cm - clean_data$chest_exhale_cm,
+  tolerance = 1e-6,
+  check.attributes = FALSE
+)
+```
+
+Then we check the range of each measurement.
+
+```{r}
+summarize_measures(
+  clean_data,
+  c("occiput_wall_cm", "chest_expansion_cm", "lumbar_flexion_cm")
+)
+```
+
+Most participants have an occiput-to-wall distance of 0, which is the normal result, so this variable is very skewed.
+The highest chest expansion values stand out, so we list them.
+
+```{r}
+clean_data %>%
+  arrange(desc(chest_expansion_cm)) %>%
+  select(id, chest_inhale_cm, chest_exhale_cm, chest_expansion_cm) %>%
+  head(10)
+```
+
+A few values are unusually high, but we cannot prove they are errors, so we keep them for now and will test whether they change our results during analysis.
+
+### Step 7: Save the cleaned data
+
+The cleaned data is saved so that the next file can load it without repeating these steps.
+
+```{r}
+save(clean_data, file = "12_DataSaving.RData")
+```

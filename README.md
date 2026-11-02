@@ -8,3 +8,19 @@ This GitHub Repo is dedicated for Team 11's STAT107 R Project. Team members are 
 | Muhammad Cheema is 'mcheema2003'
 | Nitesh Kanathala is 'knit715'
 
+## Files
+
+| File | Role |
+|---|---|
+| `data/ARQ_F.xpt` | NHANES 2009-2010 arthritis questionnaire |
+| `data/ARX_F.xpt` | NHANES 2009-2010 arthritis body measures (spinal exam) |
+| `00_requirements.R` | Installs and loads the required packages |
+| `01_funct_DataIntegration.R` | Function for merging the datasets |
+| `02_funct_DataCleaning.R` | Functions for cleaning the data |
+| `11_DataCleaning.Rmd` | Merges and cleans the data, then creates `12_DataSaving.RData` |
+| `12_DataSaving.RData` | Saved cleaned data, used by later files |
+
+## How to Reproduce
+
+1. Open `STAT107_Team11Repository_RProjectMedicine.Rproj` in RStudio.
+2. Knit `11_DataCleaning.Rmd`. This loads the packages, cleans the data and creates `12_DataSaving.RData`.
