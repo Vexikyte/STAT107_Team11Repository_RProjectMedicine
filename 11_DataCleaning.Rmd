@@ -4,6 +4,8 @@ output: html_document
 date: "2026-10-30"
 ---
 
+Set your Working Direction from Session to the Repository Folder.
+
 ```{r setup, include=FALSE}
 
 knitr::opts_chunk$set(
@@ -12,9 +14,91 @@ knitr::opts_chunk$set(
   message = FALSE
 )
 
-source("00_setup.R")
+source("00_requirements.R")
 ```
+
+Upload the two databases.
+
+```{r}
+q_data <- read_xpt("data/ARQ_F.xpt")
+x_data <- read_xpt("data/ARX_F.xpt")
+```
+
+```{r}
+dim(q_data)
+dim(x_data)
+head(q_data)
+head(x_data)
+```
+
+A few checks need to be ran to determine if the two databases can be combined for the study.
+
+| Q_Data: A dataset featuring questionnaire responses for several experiences and attributes pertaining to arthritis.
+| X_Data: Arthritis physical measurements of the same patients that also covers various health data.
+
+The idea is to combine the two to evaluate patients will full coverage for said data, since both inquiries and examinations can be scrutinized for trends and relationships.
+
+```{r}
+"SEQN" %in% names(q_data)
+"SEQN" %in% names(x_data)
+
+sum(is.na(q_data$SEQN))
+sum(is.na(x_data$SEQN))
+
+sum(duplicated(q_data$SEQN))
+sum(duplicated(x_data$SEQN))
+```
+
+The datasets are essentially sibling datasets.
+They share the same identifier column 'SEQN', and as checked, all of the identifiers have available matches for a merge.
+We also check for potential edge cases, such as potentially redundant participants that make up the observations.
+Since all returns TRUE or 0, we know these shouldn't be problematic.
+
+```{r}
+length(intersect(q_data$SEQN, x_data$SEQN))
+sum(!q_data$SEQN %in% x_data$SEQN)
+sum(!x_data$SEQN %in% q_data$SEQN)
+```
+Now we check to see if any observations are unique to particular datasets.
+5001 participants appear in both datasets, but for the questionnaire, 105 are missing physical observations in x_data.
+Joining the datasets will exclude 105 observations from the final set, but it should still be a substantial amount of data for analysis.
+
+```{r}
+source("01_funct_DataIntegration.R")
+
+raw_data <- merge_datasets(
+  q_data, x_data, "SEQN"
+)
+```
+
+The function pulled will combine the two datasets with inner_join().
+
+```{r}
+dim(raw_data)
+head(raw_data)
+sum(duplicated(raw_data$SEQN))
+n_distinct(raw_data$SEQN)
+```
+
+From a visual examination, all of the columns are present alongside their original patients.
+The dimension read also supports the 5001 compatible cases.
+For now it's structurally consistent and the integration was successful.
+Certainly unclean, but further checks will establish if that renders the database infeasible for research.
+There's a decent chance there's too many holes to make meaningful observations.
 
 ```{r}
 
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
