@@ -1,0 +1,74 @@
+---
+title: "Exploratory Data Analysis"
+output: html_document
+date: "2026-11-03"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading our Dataset and Checking dementions
+
+```{r}
+load("12_DataSaving.RData")
+source("03_funct_EDA.R")
+dim(clean_data)
+
+```
+
+## Data Preparation
+
+```{r}
+eda_data <- create_low_back_group(clean_data)
+table(eda_data$low_back_group, useNA = "ifany")
+```
+
+## Missing Data
+
+```{r}
+variables <- c(
+  "back_pain",
+  "site_low_back",
+  "lumbar_flexion_cm",
+  "chest_expansion_cm",
+  "occiput_wall_cm"
+)
+
+sapply(eda_data[variables], function(x) {
+  sum(is.na(x))
+})
+
+```
+
+## Summary Statistics
+
+```{r}
+# Lumbar flexion
+summary_by_group(eda_data, "lumbar_flexion_cm")
+
+# Chest expansion
+summary_by_group(eda_data, "chest_expansion_cm")
+
+# Occiput-to-wall distance
+summary_by_group(eda_data, "occiput_wall_cm")
+
+```
+
+## Visualizations
+
+```{r}
+# Lumbar Flexion boxplot
+plot_group_box(eda_data,"lumbar_flexion_cm","Lumbar Flexion (cm)")
+
+# Chest expansion boxplot
+plot_group_box(eda_data,"chest_expansion_cm","Chest Expansion (cm)")
+
+# Occiput-to-wall boxplot
+plot_group_box(eda_data,"occiput_wall_cm","Occiput-to-Wall Distance (cm)")
+
+# Lumbar flexion histogram
+plot_histogram(eda_data,"lumbar_flexion_cm","Lumbar Flexion (cm)")
+```
+
+
