@@ -67,3 +67,39 @@ plot_histogram <- function(data, variable, label) {
   )
 }
 
+
+# Show the counts and percentages for a category
+get_category_info <- function(data, variable) {
+  counts <- table(data[[variable]])
+  print(counts)
+  print(round(prop.table(counts) * 100, 1))
+}
+
+
+# Create a bar chart for a category
+plot_category_bar <- function(data, variable, label, horizontal = FALSE) {
+  counts <- table(data[[variable]])
+  
+  if (horizontal) {
+    old_mar <- par("mar")
+    par(mar = c(5, 12, 4, 2))
+    barplot(
+      counts,
+      horiz = TRUE,
+      las = 1,
+      main = paste(label, "Distribution"),
+      xlab = "Number of Participants",
+      col = "lightblue"
+    )
+    par(mar = old_mar)
+  } else {
+    barplot(
+      counts,
+      main = paste(label, "Distribution"),
+      xlab = label,
+      ylab = "Number of Participants",
+      col = "lightblue"
+    )
+  }
+}
+

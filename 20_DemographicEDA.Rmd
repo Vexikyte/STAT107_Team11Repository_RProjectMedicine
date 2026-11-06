@@ -1,0 +1,83 @@
+---
+title: "Demographic Exploratory Data Analysis"
+output: html_document
+---
+
+## Loading the Data
+
+Before looking at back pain and spinal measurements, we want to see who and what type of people are in our dataset. We will look into our age, BMI, sex, and race/ethnicity varaibles.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+source("00_requirements.R")
+source("03_funct_EDA.R")
+```
+
+```{r}
+load("12_DataSaving.RData")
+
+dim(clean_data)
+head(clean_data[c("age_years", "bmi", "sex", "race_ethnicity")])
+```
+
+## Checking the Demographic Variables
+
+First, we are going to check the summaries and missing values for all the variables we will use.
+
+```{r}
+summary(clean_data$age_years)
+summary(clean_data$bmi)
+summary(clean_data$sex)
+summary(clean_data$race_ethnicity)
+
+sum(is.na(clean_data$age_years))
+sum(is.na(clean_data$bmi))
+sum(is.na(clean_data$sex))
+sum(is.na(clean_data$race_ethnicity))
+```
+
+We have 39 missing values for our BMI variable, so in our BMI graph, we will only use the participants who have a BMI measurement.
+
+## Age Distribution
+
+```{r}
+mean(clean_data$age_years, na.rm = TRUE)
+median(clean_data$age_years, na.rm = TRUE)
+
+plot_histogram(clean_data, "age_years", "Age (years)")
+```
+
+The participants are between 20 and 69 years old, and their average/meann age is about 43.83 years while our median age is 44. The histogram helps us see the age ranges of our participants.
+
+## BMI Distribution
+
+```{r}
+mean(clean_data$bmi, na.rm = TRUE)
+median(clean_data$bmi, na.rm = TRUE)
+
+plot_histogram(clean_data, "bmi", "BMI")
+```
+
+The average/mean BMI is about 29.29 while our median is 28.19. Our histogram shows the BMI Distribution of our participants, the frequency of participants in each BMI range. We can clearly see how this historgram is skewed right.
+
+## Sex Distribution
+
+```{r}
+get_category_info(clean_data, "sex")
+plot_category_bar(clean_data, "sex", "Sex")
+```
+
+There are 2,418 male participants and 2,583 female participants. Both are almost equal, but females have 165 more participants than males participants.
+
+## Race/Ethnicity Distribution
+
+```{r}
+get_category_info(clean_data, "race_ethnicity")
+plot_category_bar(clean_data, "race_ethnicity", "Race/Ethnicity", horizontal = TRUE)
+```
+
+The largest group in our dataset is Non-Hispanic White, with our runnerups being Mexican American and Non-Hispanic Black participants. The groups have different sample sizes, which is useful to know before we compare results with all our data and groups.
+
+## Summary
+
+These graphs give us a background overview of the participants in our dataset. They show how age, BMI, sex, and race/ethnicity are distributed before we compare reported back pain with spinal examination measurements in `21_EDA.Rmd`.
