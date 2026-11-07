@@ -356,13 +356,35 @@ display: none;
 
 
 <p>Set your Working Directory from Session to the Repository Folder.</p>
-<p>Upload the two databases.</p>
-<pre class="r"><code>q_data &lt;- read_xpt(&quot;data/ARQ_F.xpt&quot;)
-x_data &lt;- read_xpt(&quot;data/ARX_F.xpt&quot;)</code></pre>
+<p>Upload the four databases.</p>
+<p>This project uses four datasets from the NHANES 2009-2010 survey
+cycle:</p>
+<div class="line-block">Q_Data (<code>ARQ_F.xpt</code>): A dataset
+featuring questionnaire responses for several experiences and attributes
+pertaining to arthritis.<br />
+X_Data (<code>ARX_F.xpt</code>): Arthritis physical measurements of the
+same patients, such as lumbar flexion and chest expansion.<br />
+Demo_Data (<code>DEMO_F.xpt</code>): Demographic information such as
+age, sex, race/ethnicity and pregnancy status, along with the survey
+design variables.<br />
+Body_Data (<code>BMX_F.xpt</code>): Body measurements such as height,
+weight and BMI.</div>
+<p>The two arthritis datasets hold the information our research question
+is about, while the demographic and body measurement datasets are needed
+because spinal mobility is naturally related to age, sex and height. A
+fair comparison between participants needs these variables.</p>
+<pre class="r"><code>q_data    &lt;- read_xpt(&quot;data/ARQ_F.xpt&quot;)
+x_data    &lt;- read_xpt(&quot;data/ARX_F.xpt&quot;)
+demo_data &lt;- read_xpt(&quot;data/DEMO_F.xpt&quot;)
+body_data &lt;- read_xpt(&quot;data/BMX_F.xpt&quot;)</code></pre>
 <pre class="r"><code>dim(q_data)</code></pre>
 <pre><code>## [1] 5106  125</code></pre>
 <pre class="r"><code>dim(x_data)</code></pre>
 <pre><code>## [1] 5001   13</code></pre>
+<pre class="r"><code>dim(demo_data)</code></pre>
+<pre><code>## [1] 10537    43</code></pre>
+<pre class="r"><code>dim(body_data)</code></pre>
+<pre><code>## [1] 10253    23</code></pre>
 <pre class="r"><code>head(q_data)</code></pre>
 <pre><code>## # A tibble: 6 × 125
 ##    SEQN ARQ010 ARQ020A ARQ020B ARQ020C ARQ020D ARQ020E ARQ020F ARQ020G ARQ021AA
@@ -392,16 +414,15 @@ x_data &lt;- read_xpt(&quot;data/ARX_F.xpt&quot;)</code></pre>
 ## 6 51645        2     3.2      NA     NA        1    NA         1    NA   
 ## # ℹ 4 more variables: ARXXDIST &lt;dbl&gt;, ARIXDIST &lt;dbl&gt;, ARDLFTL &lt;dbl&gt;,
 ## #   ARILFTL &lt;dbl&gt;</code></pre>
-<p>A few checks need to be ran to determine if the two databases can be
-combined for the study.</p>
-<div class="line-block">Q_Data: A dataset featuring questionnaire
-responses for several experiences and attributes pertaining to
-arthritis.<br />
-X_Data: Arthritis physical measurements of the same patients that also
-covers various health data.</div>
-<p>The idea is to combine the two to evaluate patients with full
-coverage for said data, since both inquiries and examinations can be
-scrutinized for trends and relationships.</p>
+<p>The demographic and body measurement datasets cover the whole survey,
+including children, so they are much larger than the arthritis
+datasets.</p>
+<p>We start by combining the two arthritis datasets, then add the other
+two afterward. A few checks need to be run to determine if the two
+arthritis databases can be combined for the study. The idea is to
+combine the two to evaluate patients with full coverage for said data,
+since both inquiries and examinations can be scrutinized for trends and
+relationships.</p>
 <pre class="r"><code>&quot;SEQN&quot; %in% names(q_data)</code></pre>
 <pre><code>## [1] TRUE</code></pre>
 <pre class="r"><code>&quot;SEQN&quot; %in% names(x_data)</code></pre>
@@ -470,23 +491,10 @@ a decent chance there’s too many holes to make meaningful
 observations.</p>
 <div id="adding-demographics-and-body-measures" class="section level2">
 <h2>Adding Demographics and Body Measures</h2>
-<p>Spinal mobility is related to age, sex and height, so a fair
-comparison between participants needs those variables. Neither arthritis
-dataset contains them, so we add two more NHANES 2009-2010 datasets.
-<code>DEMO_F.xpt</code> holds age, sex, race/ethnicity, pregnancy status
-and the survey design variables, and <code>BMX_F.xpt</code> holds
-height, weight and BMI.</p>
-<pre class="r"><code>demo_data &lt;- read_xpt(&quot;data/DEMO_F.xpt&quot;)
-body_data &lt;- read_xpt(&quot;data/BMX_F.xpt&quot;)
-
-dim(demo_data)</code></pre>
-<pre><code>## [1] 10537    43</code></pre>
-<pre class="r"><code>dim(body_data)</code></pre>
-<pre><code>## [1] 10253    23</code></pre>
-<p>These datasets cover the whole survey, including children, so they
-are much larger than our arthritis data. Before merging, we confirm that
-their IDs are unique and that every participant in <code>raw_data</code>
-appears in both.</p>
+<p>Next, we add the demographic and body measurement datasets that were
+loaded at the start, since neither arthritis dataset contains age, sex
+or height. Before merging, we confirm that their IDs are unique and that
+every participant in <code>raw_data</code> appears in both.</p>
 <pre class="r"><code>sum(duplicated(demo_data$SEQN))</code></pre>
 <pre><code>## [1] 0</code></pre>
 <pre class="r"><code>sum(duplicated(body_data$SEQN))</code></pre>
@@ -509,18 +517,17 @@ dim(raw_data)</code></pre>
 <div id="cleaning-steps" class="section level2">
 <h2>Cleaning Steps</h2>
 <p>The merged data now has 201 columns, so we reduce it to the variables
-that matter for studying back pain and spinal mobility, and fix how
-those variables are coded. All of the cleaning functions used below are
-in <code>02_funct_DataCleaning.R</code>.</p>
+that matter for studying pain or stiffness and spinal mobility, and fix
+how those variables are coded. All of the cleaning functions used below
+are in <code>02_funct_DataCleaning.R</code>.</p>
 <pre class="r"><code>source(&quot;02_funct_DataCleaning.R&quot;)</code></pre>
 <div id="step-1-check-who-answered-the-follow-up-questions" class="section level3">
 <h3>Step 1: Check who answered the follow-up questions</h3>
 <p>Blank values in this survey do not all mean the same thing. Most of
-them are skip patterns: a participant who reported no chronic back pain
-was never asked about their symptoms, so those values are not truly
-missing. The table below compares chronic back pain
-(<code>ARQ010</code>) with whether the participant reached the symptom
-questions (<code>ARQ040</code>).</p>
+them are skip patterns: a participant who reported no chronic pain was
+never asked about their symptoms, so those values are not truly missing.
+The table below compares chronic pain (<code>ARQ010</code>) with whether
+the participant reached the symptom questions (<code>ARQ040</code>).</p>
 <pre class="r"><code>raw_data %&gt;%
   mutate(reached_symptom_questions = !is.na(ARQ040)) %&gt;%
   count(ARQ010, reached_symptom_questions)</code></pre>
@@ -580,8 +587,8 @@ measurement it needs.</p>
 </div>
 <div id="step-3-keep-the-variables-of-interest" class="section level3">
 <h3>Step 3: Keep the variables of interest</h3>
-<p>We keep the main back pain questions, the pain diagram sites, the
-symptom questions, three related diagnoses, the spinal measurements,
+<p>We keep the main pain questions, the pain diagram sites, the symptom
+questions, three related diagnoses, the spinal measurements,
 demographics, body measures and the survey design variables.</p>
 <p>We leave out <code>ARXXDIST</code> because it records where the chest
 was measured and not how much the chest moved. We also leave out the
@@ -639,7 +646,7 @@ questionnaire documentation.</p>
     id = SEQN,
     symptoms_asked,
 
-    # Back pain and the pain diagram
+    # General pain and the pain diagram
     back_pain = label_yes_no(ARQ010),
     site_neck       = mark_pain_site(ARQ020A, back_pain),
     site_upper_back = mark_pain_site(ARQ020B, back_pain),
