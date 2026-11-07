@@ -1,6 +1,8 @@
 ---
 title: "Data Cleaning"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 date: "2026-10-30"
 ---
 
@@ -17,25 +19,36 @@ knitr::opts_chunk$set(
 source("00_requirements.R")
 ```
 
-Upload the two databases.
+Upload the four databases.
+
+This project uses four datasets from the NHANES 2009-2010 survey cycle:
+
+| Q_Data (`ARQ_F.xpt`): A dataset featuring questionnaire responses for several experiences and attributes pertaining to arthritis.
+| X_Data (`ARX_F.xpt`): Arthritis physical measurements of the same patients, such as lumbar flexion and chest expansion.
+| Demo_Data (`DEMO_F.xpt`): Demographic information such as age, sex, race/ethnicity and pregnancy status, along with the survey design variables.
+| Body_Data (`BMX_F.xpt`): Body measurements such as height, weight and BMI.
+
+The two arthritis datasets hold the information our research question is about, while the demographic and body measurement datasets are needed because spinal mobility is naturally related to age, sex and height. A fair comparison between participants needs these variables.
 
 ```{r}
-q_data <- read_xpt("data/ARQ_F.xpt")
-x_data <- read_xpt("data/ARX_F.xpt")
+q_data    <- read_xpt("data/ARQ_F.xpt")
+x_data    <- read_xpt("data/ARX_F.xpt")
+demo_data <- read_xpt("data/DEMO_F.xpt")
+body_data <- read_xpt("data/BMX_F.xpt")
 ```
 
 ```{r}
 dim(q_data)
 dim(x_data)
+dim(demo_data)
+dim(body_data)
 head(q_data)
 head(x_data)
 ```
 
-A few checks need to be ran to determine if the two databases can be combined for the study.
+The demographic and body measurement datasets cover the whole survey, including children, so they are much larger than the arthritis datasets.
 
-| Q_Data: A dataset featuring questionnaire responses for several experiences and attributes pertaining to arthritis.
-| X_Data: Arthritis physical measurements of the same patients that also covers various health data.
-
+We start by combining the two arthritis datasets, then add the other two afterward. A few checks need to be run to determine if the two arthritis databases can be combined for the study.
 The idea is to combine the two to evaluate patients with full coverage for said data, since both inquiries and examinations can be scrutinized for trends and relationships.
 
 ```{r}
@@ -88,19 +101,7 @@ There's a decent chance there's too many holes to make meaningful observations.
 
 ## Adding Demographics and Body Measures
 
-Spinal mobility is related to age, sex and height, so a fair comparison between participants needs those variables.
-Neither arthritis dataset contains them, so we add two more NHANES 2009-2010 datasets.
-`DEMO_F.xpt` holds age, sex, race/ethnicity, pregnancy status and the survey design variables, and `BMX_F.xpt` holds height, weight and BMI.
-
-```{r}
-demo_data <- read_xpt("data/DEMO_F.xpt")
-body_data <- read_xpt("data/BMX_F.xpt")
-
-dim(demo_data)
-dim(body_data)
-```
-
-These datasets cover the whole survey, including children, so they are much larger than our arthritis data.
+Next, we add the demographic and body measurement datasets that were loaded at the start, since neither arthritis dataset contains age, sex or height.
 Before merging, we confirm that their IDs are unique and that every participant in `raw_data` appears in both.
 
 ```{r}

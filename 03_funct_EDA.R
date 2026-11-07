@@ -1,5 +1,7 @@
 # All our functions for the Exploratory Data Analysis
 
+# General Dataset Information
+# Input a dataset, and it returns its dimensions, its first few rows, and a summary of its data.
 get_dataset_info <- function(data) {
   print(dim(data))
   print(head(data))
@@ -7,7 +9,9 @@ get_dataset_info <- function(data) {
 }
 
 
-# Create groups based on prolonged low-back symptoms
+# Classifies participants according to whether they reported lower-back pain.
+# data: A dataset containing back_pain and site_low_back.
+# Returns the dataset with a new low_back_group factor column
 create_low_back_group <- function(data) {
   group <- rep(NA_character_, nrow(data))
   group[data$back_pain == "No"] <- "No"
@@ -19,109 +23,13 @@ create_low_back_group <- function(data) {
   return(data)
 }
 
-
-# Calculate statistics for each group
-summary_by_group <- function(data, variable) {
-  groups <- levels(data$low_back_group)
-  results <- lapply(groups, function(group) {
-    values <- data[[variable]][data$low_back_group %in% group]
-    values <- values[!is.na(values)]
-    data.frame(
-      Group = group,
-      Count = length(values),
-      Mean = if (length(values) > 0)
-        round(mean(values), 2) else NA_real_,
-      Median = if (length(values) > 0)
-        round(median(values), 2) else NA_real_,
-      SD = if (length(values) > 1)
-        round(sd(values), 2) else NA_real_
-    )
-  })
-  
-  return(do.call(rbind, results))
-}
-
-
-# Create a boxplot for a measurement
-plot_group_box <- function(data, variable, label) {
-  boxplot(
-    data[[variable]] ~ data$low_back_group,
-    main = paste(label, "by Low-Back Symptoms"),
-    xlab = "History of Low-Back Symptoms",
-    ylab = label,
-    col = c("lightblue", "lightgreen")
-  )
-}
-
-
-# Create a histogram for a measurement
-plot_histogram <- function(data, variable, label) {
-  values <- data[[variable]]
-  values <- values[is.finite(values)]
-  hist(
-    values,
-    main = paste("Distribution of", label),
-    xlab = label,
-    col = "lightblue",
-    breaks = 20
-  )
-}
-
-
-# Show the counts and percentages for a category
-get_category_info <- function(data, variable) {
-  counts <- table(data[[variable]])
-  print(counts)
-  print(round(prop.table(counts) * 100, 1))
-}
-
-
-# Create a bar chart for a category
-plot_category_bar <- function(data, variable, label, horizontal = FALSE) {
-  counts <- table(data[[variable]])
-  
-  if (horizontal) {
-    old_mar <- par("mar")
-    par(mar = c(5, 12, 4, 2))
-    barplot(
-      counts,
-      horiz = TRUE,
-      las = 1,
-      main = paste(label, "Distribution"),
-      xlab = "Number of Participants",
-      col = "lightblue"
-    )
-    par(mar = old_mar)
-  } else {
-    barplot(
-      counts,
-      main = paste(label, "Distribution"),
-      xlab = label,
-      ylab = "Number of Participants",
-      col = "lightblue"
-    )
-  }
-}
-
-# -----------------------------------------
-# General dataset information
-# -----------------------------------------
-
-get_dataset_info <- function(data) {
-  cat("Dataset dimensions:\n")
-  print(dim(data))
-  
-  cat("\nFirst six observations:\n")
-  print(head(data))
-  
-  cat("\nSummary statistics:\n")
-  print(summary(data))
-}
-
-
 # -----------------------------------------
 # Screening groups
 # -----------------------------------------
+# The function classifies participants based on their prolonged-symptom screening responses
+# Input a dataset with the back_pain variable
+# Outputs the dataset with a new symptom_group column
+# Contains Yes/No Screening classifications
 
 create_symptom_group <- function(data) {
   group <- rep(NA_character_, nrow(data))
@@ -141,6 +49,9 @@ create_symptom_group <- function(data) {
 # -----------------------------------------
 # Group summaries and missing values
 # -----------------------------------------
+# Insert a dataset, and the measurement you want to summarize.
+# Symptom_group is defaulted as the categorical variable used to separate participants.
+# Outputs a data frame with one row per group and columns for the group name, count, mean, median, and stdev
 
 summary_by_group <- function(data, variable,
                              group_variable = "symptom_group") {
@@ -163,7 +74,9 @@ summary_by_group <- function(data, variable,
   return(do.call(rbind, results))
 }
 
-
+# Input a dataset, the variable with missing values to examine
+# Symptom_group is defaulted for the grouping variable
+# It'll output a data frame showing each group's missing-value count and missing-value percentage
 missing_by_group <- function(data, variable,
                              group_variable = "symptom_group") {
   
@@ -187,6 +100,10 @@ missing_by_group <- function(data, variable,
 # Basic plots
 # -----------------------------------------
 
+# Input a dataset, the variable to visualize, and  given the measurement a display name with label
+# Grouping variable is defaulted to symptom_group
+# Outputs a boxplot displayed in the plotting output
+
 plot_group_box <- function(data, variable, label,
                            group_variable = "symptom_group") {
   
@@ -197,17 +114,6 @@ plot_group_box <- function(data, variable, label,
     ylab = label,
     col = c("lightblue", "lightgreen")
   )
-}
-
-# Categorical summaries and plots
-get_category_info <- function(data, variable) {
-  counts <- table(data[[variable]], useNA = "ifany")
-  
-  cat("Category counts:\n")
-  print(counts)
-  
-  cat("\nCategory percentages:\n")
-  print(round(prop.table(counts) * 100, 1))
 }
 
 # -----------------------------------------

@@ -1,8 +1,11 @@
 ---
 title: "Back Pain and Spinal Mobility in U.S. Adults: An NHANES 2009-2010 Analysis"
-author: "Team 11: Ethan Ballada, Muhammad Cheema, Nitesh Kanathala"
+author: 'Team 11: Ethan Ballada, Muhammad Cheema, Nitesh Kanathala'
 date: "2026-11-06"
-output: pdf_document
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
 ---
 
 
@@ -16,6 +19,11 @@ source("03_funct_EDA.R")
 load("12_DataSaving.RData")
 eda_data <- create_low_back_group(clean_data)
 ```
+
+Repo Link: https://github.com/Vexikyte/STAT107_Team11Repository_RProjectMedicine.git
+
+Note: The PDF version seems to have figure issues in formatting. The HTML version abides to the figure display better.
+The solution provided in the announcement wasn't very effective. If you want to observe a cleaner version of the report, observe the HTML version of its knit.
 
 # Executive Summary
 
@@ -81,7 +89,149 @@ It is important to note that not all patients had responses or data for some of 
 
 # Visualization
 
+The preliminary portion of the project was dedicated to visualizations, aimed to examine distributions of reported pain regions as well as what relationships they may potentially have with spinal mobility measurements among NHANES participants aged 20-69. Frequency bar charts, histograms and boxplots were the main visualizations used to study the data outside of summaries and mathematics.
 
+```{r plot1, echo=FALSE, fig.cap="This is my figure caption", fig.align="center", out.width="70%"}
+knitr::include_graphics("images/plot1.png")
+```
+
+The first point of interest for approaching the research question was to examine the three spinal mobility measurements provided in the dataset; comparing two particular groups. The 'yes' group referenced throughout the research is the group that met a specific criteria for a particular question: Whether or not they have experienced at least 6-weeks of prolonged pain or stiffness in any region. The 'no' group, while still containing data for study, are the participants that did not meet said criteria, and were not inquiried on particular questions that the 'yes' group has.
+
+The boxplots compare the 'yes' and 'no' groups for all three measurements: lumbar flexion, chest expansion, and occiput-to-wall. All units are in centimeters. Our inference for the data provided was that the groups would differ to some degree of significance, with the 'yes' group being spread away from an ideal measurement on average, while the 'no' group being spread towards ideal measurements.
+
+When it comes to the physical examinations, in terms of pain and stiffness:
+
+| Lumbar flexion is measuring the increase in distance between two lower-back marks when bending forward. Higher lumbar flexion is generally better.
+- In the boxplot, the two distributions and spreads were very similar, appearing to have nearly identical IQRs, medians and whisker ranges. What differs is the amount and range of the outliers in the 'no' group, with more participants on average having higher lumbar flexion.
+
+| Chest expansion is the difference between chest circumference at full inspiration and expiration when breathing. Higher chest expansion is generally better.
+- In the boxplot, the distributions, IQRs and medians do differ slightly. The 'no' group's median is slightly higher, as well as thE IQR being more right-pushed and wider, with a further right whisker and further outliers to the right. Similar to lumbar flexion, but with a more noticeable difference, the 'no' group's participants tended to have greater chest expansion measurements.
+
+| Occiput-to-wall is the distance between the back of the head and the wall when standing upright. Lower measurements are generally better.
+- The observations were particularly right skewed, with the median and IQRs being 0 in both plots. Their plots are vastly defined by the outliers beyond their respective plots, with the 'no' group having a further spread of outliers.
+
+Altogether, these three plots would be compared to future boxplots generated while comparison specific subgroups of the 'yes' group. They set a standard for arguing whether or not visualizations later on support association between reported prolonged pain or stiffness, and physical examination measurements for spinal mobility.
+
+```{r sum1, echo=FALSE, fig.cap="Initial Physical Measurement Comparison", fig.align="center", out.width="70%"}
+knitr::include_graphics("images/sum1.png")
+```
+
+The summaries are the boxplot summaries.
+As observed, the lumbar flexion mean is slightly greater within the 'no' group, but the two groups have equal medians.
+Chest expansion has a slightly higher median for the 'no' group, as well as a slightly higher mean.
+For occiput-to-wall, the IQRs and median are 0. Mean and values beyond the IQR are what defined their plots.
+
+```{r plot2, echo=FALSE, fig.cap="Reported Pain by Anatomical Region", fig.align="center", out.width="70%"}
+knitr::include_graphics("images/plot2.png")
+```
+
+It was revealed that the regions most commonly reported to have prolonged pain or stiffness was the lower back, followed by the neck and buttocks. The middle and upper back regions were ranked significantly lower in frequency compared to the lower back, so treating the entire back region as one unified region may not be sufficient, since specificity would be favorable for capturing the health observations of the participants. Because of the difference in frequencies, it was also possible that sampling quantity differences would be significant. Nonetheless, it provides contextualization for later investigations for association, since we can compare on an anatomic-regional level if there are differences in physical examinations.
+
+```{r plot3, echo=FALSE, fig.cap="Number of Reported Pain Regions", fig.align="center", out.width="70%"}
+knitr::include_graphics("images/plot3.png")
+```
+
+When we examined the participants that met the criteria for prolonged pain or stiffness, specifically a survey question requesting them to select all regions that applied amongst the seven listed before, a majority of the participants had reported only a single region of prolonged pain or stiffness, with the frequency declining as the number of regions incremented. Evaluating the subgroup with specifically one region of concern, as opposed to the other numbers with multiple regions of concern, allows for independent analysis of specific regions without multiple regions conflicting with one another. Both possibilities can be explored in depth, but as of now, only singular-regions are analyzed for potential association.
+
+```{r plot4, echo=FALSE, fig.cap="Specificity For Singular-Reported Pain Regions", fig.align="center", out.width="70%"}
+knitr::include_graphics("images/plot4.png")
+```
+
+The bar plot elaborates on the single-region participants by revealing what regions they pertained to. Similar to the original type distribution of the overall region plot, lower back, neck and buttocks were the regions of commonality, though values after rank 3 differ in placement for single-region participants.
+
+When we cross-compare the physical examinations of one-region participants to the overall examinations, we'll have to consider representation differences for attributes not in the top three. Otherwise, the sampling frequency parallels the sampling frequency of the original distribution.
+
+-------------
+
+The following 21 plots are 3 groups of 7 boxplots.
+Each of the boxplots for each group cover the seven survey regions a participant could select for where they experienced pain or stiffness.
+The participants featured in these boxplots are the ones that had only selected one region for where they experienced pain or stiffness.
+The objective here is to see if differences amongst these boxplots, in comparison to the original measurement boxplots, could support or challenge the idea of association between physical measurements and reported prolonged negative symptoms.
+
+```{r plot5_1, echo=FALSE, fig.cap="Lumbar Flexion for Single-Region Participants", fig.align="center", out.width="70%"}
+knitr::include_graphics("images/plot5.1.png")
+```
+
+Amongst the plots, the median in the 'yes' groups were higher in every region except for buttocks, since there, the medians were relateively equal.
+The IQRs are all quite similar, but buttocks does have a noticeable IQR shift towards higher measurements within the 'no' group.
+Rib cage also has a larger IQR in the 'no' group.
+The 'no' group was also the side that tended to have more outliers towards higher values.
+The lower back in particular was an exception, sinve its 'yes' group had more high-side outliers than its no group. This is also the most common reported region of pain or stiffness.
+
+Overall, while lumber flexion appeared to be consistent among the anatomical regions, the lower back comparison had a separate outlier pattern compared to the other back regions. Compared to the original lumber flexion plot however, there is very little difference in distribution.
+
+```{r plot5_2, echo=FALSE, fig.cap="Chest Expansion for Single-Region Participants", fig.align="center", out.width="70%"}
+knitr::include_graphics("images/plot5.2.png")
+```
+
+For chest expansion, the IQRs and whisker ranges were generally similar.
+The 'Yes' group median was slightly higher for a few plots, such as neck, upper back, mid back and lower back.
+The 'Yes' group medians was also equal or lower with the buttocks, hip and rib cage regions.
+Whisker differences existed with lower back, buttocks, hip and rib cage, with shorter ranges in their 'Yes' groups.
+Outlier distributions had very considerably variation between groups.
+
+Overall, chest expansion had shown a more noticeable regional variation than lumbar flexion, which also paralleled the original observations. The lower-back, buttocks, hip and rib-cage comparisons had a lower average expansion in their 'Yes' groups, but other than that, this alone couldn't establish association for measurements and reported symptoms.
+
+```{r plot5_3, echo=FALSE, fig.cap="Occiput-To-Wall Distance for Single-Region Participants", fig.align="center", out.width="70%"}
+knitr::include_graphics("images/plot5.3.png")
+```
+
+Just like the original boxplot, all seven comparions were very strongly right skewed due to 0-valued statistics.
+The plots are largely defined by their outlier spreads and distributions, and they vary significantly across anatomical regions.
+Rib in particular has significantly less 'Yes' group outliers, which could have been a reflection of its sample size.
+In most comparisons the 'no' group appeared to have more outliers.
+
+---
+
+It's noted that most of the regional pain reports didn't consistently correspond to visibly different mobility measurements.
+A majority of the variable differences in these boxplots were mainly concentrated by the shapes and distributions of their tails, sine central tendencies were often very reproducible across plots.
+The stability of some of the smaller pain groups was debateably questionable, since their sampling sizes differed compared to larger subgroups like lower back pain.
+
+Overall, from these particular observations and comparisons, the boxplots do not demonstrate a clearly consistent relationship between reported anatomical pain regions and spinal mobility measurements. That's not to say there is no association, but the plots do not provide significant evidence to support an argument of the research question. Subsequent statistical analyses will be necessary to further investigate whether or not there is a significant association, since it's unclear if the location of reported pain corresponds to differences in particular physical measurements.
+
+# Demographic Variables: Baseline Checks
+
+The goal with the demographic variables within the dataset are to determine if confounding variables like age, sex, BMI or race/ethnicity are potentially better explanatory variables for physical measurements and reported prolonged pain or stiffness, instead of the original two subjects pertaining to one another exclusively.
+
+The existing checks are poised for establishing context for interpreting future visualizations or analyses for establishing associations, rather than attempting to support the research question directly.
+
+```{r plot6_1, echo=FALSE, fig.cap="Age Distribution", fig.align="center", out.width="70%"}
+knitr::include_graphics("images/plot6.1.png")
+```
+
+When it came to the age distribution of the dataset, it appeared that a majority of the participants were 20-22 years old. Other than ages 68-69 being the minimum, the remainder of the dataset's age distribution was largely uniform, with no dramatic skew. Symptoms and responses may still differ between ages, but in terms of data subgroup disparities, it should be relatively balanced, unlike the other upcoming demographic variables.
+
+```{r plot6_2, echo=FALSE, fig.cap="BMI Distribution", fig.align="center", out.width="70%"}
+knitr::include_graphics("images/plot6.2.png")
+```
+
+BMI Distribution was skewed to the right, with the distribution and spread being largely defined by extreme outliers to the right of the range in values around 70-80. Other than that, a majority of the participants were BMI 20-35, meaning the general density of the distribution may have a less volatile examination in comparison to the outliers, which may yield more anomalous results when we examine their measurements and responses.
+
+```{r plot6_3, echo=FALSE, fig.cap="Sex Distribution", fig.align="center", out.width="70%"}
+knitr::include_graphics("images/plot6.3.png")
+```
+
+In term of sex distribution, the dataset has a simple majority with females, but is otherwise balanced in terms of quantity.
+There may be significant differences in both responses and examinations depending on what gender the observations are from, which will be considered later on.
+
+```{r plot6_4, echo=FALSE, fig.cap="Race/Ethnicity Distribution", fig.align="center", out.width="70%"}
+knitr::include_graphics("images/plot6.4.png")
+```
+
+NHANES's sampling design had aimed to obtain substantial data for specific demographic subgroups, with ethnicity being one of them. However, it appears that a majority of the data is Non-Hispanic White, with other ethnicities like Non-Hispanic Black, Other Hispanic and Mexican American following behind. An asterisk column with Other or Multi-Racial exists on the side, though it is noteworthy that there seems to be a column specifically for multi-racial participants.
+
+---
+
+With the surface distributions for the independent demographic variables, it's noteworthy that there are meaningful demographic variations within the dataset. While it doesn't immediately support the role of being confounding for physical examinations or other symptoms, it contextualizes the argument for demographic variables as a whole being potentially significant when interpreting anatomic-regions and how they pertain to potential association.
+
+Perhaps depending on one's age group, the type or number of regions a person is experiencing prolonged pain or stiffness in can increase or differ.
+Sex in particular could be explanatory for differences in measurements, since they differ biologically by default.
+Certain ranges of BMI may also be indicative of specific types and pain coverage as well, especially the outlier participants.
+Ethnicity and race, while supporting other arguments for generalizing the data with the American population, itself may not be explanatory for differences however, even if there are numerical disparities. As a social construct, it may not be as explanatory as direct biological data like sex, BMI and age.
+
+The significance of these variables exist to potentially context the potential association between prolonged pain or stiffness, and the physical examinations of those that reported it.
+
+For the entirety of the existing progress however, revisions and extensions will be heavily considered for more visualizations, since there is a wide variety of angles we can consider for examining an association. There are other variables from the questionnaire portion of the dataset that are also worth examining, alongside the physical examinations themselves. It's not just demographics that may potentially be confounding, since the survey had also aimed to understand and record more personal lifestyle details of the participants that could further explain symptoms or readings. It would be of benefit to scrutinize more potential relationships to weigh the leads the research question could be supported or challenged by.
 
 # Analysis
 
@@ -99,5 +249,27 @@ As of the current track of interpretation, our objective is to search for eviden
 
 All of the proposed analysis methods we have may be adjusted depending on what discoveries are made, especially if it's significant to scrutinize pain regions alongside the broad screening groups.
 
-```
+# Summary of Individual Contribution
+
+| Ethan Ballada is 'vexikyte'
+- Created the Repo, found and researched the datasets
+- Proposed the research question and follow up implications
+- Set up README, made final adjustments
+- Made the final expansions on EDA from Nitesh's EDA work
+- Composed the final report except for Data Cleaning
+- Overviewed for general errors and fixes globally
+- General sanitation
+
+| Muhammad Cheema is 'mcheema2003'
+- Performed a majority of data cleaning
+- Composed the Data Cleaning portion of the final paper
+- Overviewed files and markdowns for formatting, discrepancies and run tests.
+- Composed most of README.md
+
+| Nitesh Kanathala is 'knit715'
+- Performed the initial stepping stones for EDA, discovered precedents and issues to account for in the first draft
+- Composed functions to use for EDA, substituted existing code blocks to instead favor function use
+- Prepared demographic EDA for analysis
+
+
 
