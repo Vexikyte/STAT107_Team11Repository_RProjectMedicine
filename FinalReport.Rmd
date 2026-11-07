@@ -69,6 +69,8 @@ After merging, we cleaned the data in a few steps:
 
 At the end, we checked that we didn't lose any participants or real answers, and that chest expansion matched the inhale minus exhale measurement for everyone. A few chest expansion values were really high (up to 18.5 cm), but we kept them because we couldn't prove they were mistakes. 68 participants were pregnant during the exam, so we kept track of that in case it matters for the analysis. Height was missing for 33 people and BMI was missing for 39.
 
+Reviews will be conducted later on to ensure data cleaning meets the standards of the work's insights, since adjustments or changes in perception can happen that may make some judgments more desirable.
+
 ## Variables, Observations and Data Substantiality
 
 After data cleaning was completed, 5,001 observations remained with 37 variables. There were originally 201 variables, but 164 columns were removed due to having little association with the research question we aimed to answer, or were better represented by proxy within other variables.
@@ -79,74 +81,7 @@ It is important to note that not all patients had responses or data for some of 
 
 # Visualization
 
-## Who is in our data?
 
-```{r}
-plot_histogram(clean_data, "age_years", "Age (years)")
-```
-
-Participants range from 20 to 69 years old, with a mean age of about 43.8 and a median of 44.
-
-```{r}
-plot_histogram(clean_data, "bmi", "BMI")
-```
-
-The mean BMI is about 29.3 and the median is 28.2, and the distribution is skewed right.
-
-```{r}
-plot_category_bar(clean_data, "sex", "Sex")
-```
-
-There are 2,418 male and 2,583 female participants, so the two groups are close in size.
-
-```{r, fig.width = 7}
-plot_category_bar(clean_data, "race_ethnicity", "Race/Ethnicity", horizontal = TRUE)
-```
-
-The largest group is Non-Hispanic White, followed by Mexican American and Non-Hispanic Black participants. Since the groups differ in size, this is useful to know before comparing results across them.
-
-## Spinal mobility by low-back symptoms
-
-We split participants into two groups: those who reported prolonged low-back symptoms, and those who did not.
-
-```{r}
-knitr::kable(table(eda_data$low_back_group, useNA = "ifany"),
-             col.names = c("Low-back symptoms", "Participants"))
-```
-
-```{r}
-knitr::kable(summary_by_group(eda_data, "lumbar_flexion_cm"),
-             caption = "Lumbar flexion (cm) by low-back symptoms")
-plot_group_box(eda_data, "lumbar_flexion_cm", "Lumbar Flexion (cm)")
-```
-
-[What the lumbar flexion boxplot shows.]
-
-```{r}
-knitr::kable(summary_by_group(eda_data, "chest_expansion_cm"),
-             caption = "Chest expansion (cm) by low-back symptoms")
-plot_group_box(eda_data, "chest_expansion_cm", "Chest Expansion (cm)")
-```
-
-[What the chest expansion boxplot shows.]
-
-```{r}
-knitr::kable(summary_by_group(eda_data, "occiput_wall_cm"),
-             caption = "Occiput-to-wall distance (cm) by low-back symptoms")
-plot_group_box(eda_data, "occiput_wall_cm", "Occiput-to-Wall Distance (cm)")
-```
-
-[What the occiput-to-wall boxplot shows. Most people measure 0 cm here, which is the normal result.]
-
-```{r}
-plot_histogram(eda_data, "lumbar_flexion_cm", "Lumbar Flexion (cm)")
-```
-
-[What the lumbar flexion histogram shows.]
-
-## Further visualizations
-
-Next, we plan to make scatterplots of each spinal measurement against age, colored by low-back symptom group, to see whether mobility declines with age at the same rate in both groups. We will also make side-by-side boxplots split by sex, since men and women may differ in spinal mobility.
 
 # Analysis
 
@@ -158,8 +93,11 @@ For the next steps that will be taken to further examine the differences we obse
 
 | Logistic Regression: Probabilities of positive occiput-to-wall measurements may differ between the groups we're screening, and we'll examine them after we account for demographic attributes.
 
-| Survey Weights: Because of how the data was obtained during the 2009-2010 NHANES survey, we may incorporate weights to account for the sampling design that was implemented at the to,e/
+| Survey Weights: Because of how the data was obtained during the 2009-2010 NHANES survey, we may incorporate weights to account for the sampling design that was implemented at the time.
 
-All of the proposed analysis methods we have may be adjusted depending on what discoveries are made, especially if it's significant to scurtinize pain regions alongside the broad screening groups.
+As of the current track of interpretation, our objective is to search for evidence that may refute the current stance that there may be no statistically significant association between spinal mobility measurements and reported prolonged pain or stiffness. Demographic variables serve as a secondary perspective to maybe provide an alternative answer.
+
+All of the proposed analysis methods we have may be adjusted depending on what discoveries are made, especially if it's significant to scrutinize pain regions alongside the broad screening groups.
+
 ```
 
