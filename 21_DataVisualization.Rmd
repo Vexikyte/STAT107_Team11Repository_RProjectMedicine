@@ -1,16 +1,8 @@
 ---
-<<<<<<< HEAD:21_DataVisualization.Rmd
-<<<<<<< HEAD:21_DataVisualization.Rmd
-title: "22_EDA"
+title: "Exploratory Data Analysis"
 output:
   pdf_document: default
   html_document: default
-=======
-=======
->>>>>>> c879c10b614ef9ba8a450d1f3880bfb4d79c5b72:21_EDA.Rmd
-title: "Exploratory Data Analysis"
-output: html_document
->>>>>>> c879c10b614ef9ba8a450d1f3880bfb4d79c5b72:21_EDA.Rmd
 date: "2026-11-06"
 ---
 
@@ -283,16 +275,8 @@ barplot(
 region_frequencies <- table(region_count)
 region_frequencies
 ```
-<<<<<<< HEAD:21_DataVisualization.Rmd
-<<<<<<< HEAD:21_DataVisualization.Rmd
 
-From the bar graph, it appears a vast majority of the group with prolonged pain or stiffness is suffering from one particular region, rather than having broad coverage across their body. In layman terms, the data is right skewed. Naturally, the amount of regions declines in frequency as regions grow more numerous, which clarifies that we aren't dealing with a dataset of participants clustered into uncommon coverages.
-=======
 From the bar graph, it appears a vast majority of the group with prolonged pain or stiffness is suffering from one particular region, rather than having broad coverage across their body. In layman's terms, the data is right skewed. Naturally, the amount of regions declines in frequency as regions grow more numerous, which clarifies that we aren't dealing with a dataset of participants clustered into uncommon coverages.
->>>>>>> c879c10b614ef9ba8a450d1f3880bfb4d79c5b72:21_EDA.Rmd
-=======
-From the bar graph, it appears a vast majority of the group with prolonged pain or stiffness is suffering from one particular region, rather than having broad coverage across their body. In layman's terms, the data is right skewed. Naturally, the amount of regions declines in frequency as regions grow more numerous, which clarifies that we aren't dealing with a dataset of participants clustered into uncommon coverages.
->>>>>>> c879c10b614ef9ba8a450d1f3880bfb4d79c5b72:21_EDA.Rmd
 
 As for if this potentially represents the American population, we'd have to consider matters with variable weights and design adjustments if we were to make such a claim. The research question is particularly focused on NHANES participants, so that is a separate consideration.
 
@@ -338,16 +322,8 @@ barplot(
   cex.main = 1
 )
 ```
-<<<<<<< HEAD:21_DataVisualization.Rmd
-<<<<<<< HEAD:21_DataVisualization.Rmd
 
-From the box plot (which to clarify, is not right skewed due to it being sorted), it's noted that the dominant region of pain or stiffness amongst the 1-region participants is the lower back, follwed by the neck, buttocks and hip. The other regions of the backs appear to be less common compared to specifically the lower back, so it would be better to treat the three regions of the back with specificity rather than unifying them as one singular region.
-=======
 From the bar plot (which to clarify, is not right skewed due to it being sorted), it's noted that the dominant region of pain or stiffness amongst the 1-region participants is the lower back, followed by the neck, buttocks and hip. The other regions of the backs appear to be less common compared to specifically the lower back, so it would be better to treat the three regions of the back with specificity rather than unifying them as one singular region.
->>>>>>> c879c10b614ef9ba8a450d1f3880bfb4d79c5b72:21_EDA.Rmd
-=======
-From the bar plot (which to clarify, is not right skewed due to it being sorted), it's noted that the dominant region of pain or stiffness amongst the 1-region participants is the lower back, followed by the neck, buttocks and hip. The other regions of the backs appear to be less common compared to specifically the lower back, so it would be better to treat the three regions of the back with specificity rather than unifying them as one singular region.
->>>>>>> c879c10b614ef9ba8a450d1f3880bfb4d79c5b72:21_EDA.Rmd
 
 ## Comparing Anatomic Regions: Physical Examination Measurements
 
