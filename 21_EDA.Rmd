@@ -1,74 +1,541 @@
 ---
-title: "Exploratory Data Analysis"
+title: "22_EDA"
 output: html_document
-date: "2026-11-03"
+date: "2026-11-06"
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Loading our Dataset and Checking dimensions
+## Loading dataset
 
 ```{r}
 load("12_DataSaving.RData")
+source("00_requirements.R")
 source("03_funct_EDA.R")
+```
+
+---
+
+## SECTION 1
+## Screening of Prolonged Pain or Stiffness, Frequencies, and Physical Measurements
+
+The research question to answer is the following:
+
+| During the 2009-2010 NHANES survey cycle, among NHANES participants from ages 20-69, are reported pain regions associated with differences observed in spinal mobility measurements?
+
+From what we learned from data cleaning, we hold categories of variables pertaining to different survey coverage concerns from the NHANES datasets.
+- Criteria Variables: Some variables were aimed to test for eligibility with further-symptom questions.
+- Pain Regions: Variables listing the reported locations participants were experiencing pain.
+- Symptom Descriptions: Variables reported from patients describing their symptoms, such as when they occurred and what may have influenced them.
+- Physical Examinations: Measurement variables collected from the NHANES survey such as lumbar flexion, chest expansion and others.
+- Demographic Characteristics and Others: Broad variables for subgroup analysis such as ethnicity, BMI, sex, age, height and weight.
+
+To answer the research question, we'll need to learn how we should we perceiving the data pertaining to pain and spinal mobility, as well as any caveats that may challenge existing medical assumptions related to the question.
+
+## Overview
+
+```{r}
 dim(clean_data)
-
+names(clean_data)
 ```
-
-## Data Preparation
+## Intro Pain Survey Checks
 
 ```{r}
-eda_data <- create_low_back_group(clean_data)
-table(eda_data$low_back_group, useNA = "ifany")
+table(clean_data$back_pain, useNA = "ifany")
 ```
+It appears that around 29.7% of the survey has reported symptoms of pain, aching or stiffness in regions like the back, neck and hip over the course of 6 weeks, daily. Those who said 'no' are not to be treated as having no symptoms, for they simply didn't meet the criteria for answering 'yes' with this question. It provides a considerable threshold to potentially stratify participants by back pain.
 
-## Missing Data
+For clarification with the measurement examinations:
+
+| Lumbar flexion is measuring the increase in distance between two lower-back marks when bending forward. Higher lumbar flexion is generally better.
+| Chest expanion is the difference between chest circumference at full inspiration and expiration when breathing. Higher chest expansion is generally better.
+| Occuput-to-wall is the distance between the back of the head and the wall when standing upright. Lower measurements are generally better.
+
+## Between 'yes' and 'no' participants, how do specific measurements differ?
 
 ```{r}
-variables <- c(
-  "back_pain",
+sum(is.na(clean_data$back_pain))
+```
+
+Only 2 participants have NA here, so it's relatively negligible for the following checks.
+
+```{r}
+yes_group <- clean_data[clean_data$back_pain == "Yes", ]
+no_group  <- clean_data[clean_data$back_pain == "No", ]
+
+cat("Yes Group - LUMBAR FLEXION\n")
+summary(yes_group$lumbar_flexion_cm)
+
+cat("No Group - LUMBAR FLEXION\n")
+summary(no_group$lumbar_flexion_cm)
+
+cat("Yes Group - CHEST EXPANSION\n")
+summary(yes_group$chest_expansion_cm)
+
+cat("No Group - CHEST EXPANSION\n")
+summary(no_group$chest_expansion_cm)
+
+cat("Yes Group - OCCIPUT-TO-WALL\n")
+summary(yes_group$occiput_wall_cm)
+
+cat("No Group - OCCIPUT-TO-WALL\n")
+summary(no_group$occiput_wall_cm)
+summary(no_group$occiput_wall_cm)
+```
+Based on summaries alone, it seems that lumbar flexion between the two groups is quite similar; yielding the same IQR and medians. The means differ by 0.072.
+Chest expansion has a mean difference of 0.220, with summary returns being larger in the No Group.
+Occiput-To-Wall groups have the same medians, but the Yes-Group has a larger mean.
+
+In regards to the research question, associations may be measurement-specific, as opposed to a global shift in physical examinations.
+
+## Addressing the NAs
+
+```{r}
+mean(is.na(yes_group$lumbar_flexion_cm)) * 100
+mean(is.na(no_group$lumbar_flexion_cm)) * 100
+
+mean(is.na(yes_group$chest_expansion_cm)) * 100
+mean(is.na(no_group$chest_expansion_cm)) * 100
+
+mean(is.na(yes_group$occiput_wall_cm)) * 100
+mean(is.na(no_group$occiput_wall_cm)) * 100
+```
+Between the groups, despite NA values existing, their proportions of missing observations were relatively similar. Overall, it's not too imbalanced, but that doesn't outrule potential significance later on.
+
+Let's examine the variables as boxplots:
+
+```{r}
+
+par(mfrow = c(1, 3))
+
+boxplot(yes_group$lumbar_flexion_cm,
+        no_group$lumbar_flexion_cm,
+        names = c("Yes", "No"),
+        main = "Lumbar Flexion",
+        ylab = "Measurement (cm)",
+        xlab = "Prolonged Pain Screening")
+
+boxplot(yes_group$chest_expansion_cm,
+        no_group$chest_expansion_cm,
+        names = c("Yes", "No"),
+        main = "Chest Expansion",
+        ylab = "Measurement (cm)",
+        xlab = "Prolonged Pain Screening")
+
+boxplot(yes_group$occiput_wall_cm,
+        no_group$occiput_wall_cm,
+        names = c("Yes", "No"),
+        main = "Occiput-to-Wall",
+        ylab = "Measurement (cm)",
+        xlab = "Prolonged Pain Screening")
+
+par(mfrow = c(1, 1))
+
+```
+The boxplot for lumbar flexion seems to reinforce the observation before, with lumbar flexion plots being virtually identical in all but outliers beyond the right whiskers. The No group has more observations beyond its right whisker, as opposed to the Yes group.
+
+In the No Group for chest expansion, the IQR is slightly wider and further to the right, with the same similar median. There are more observations with larger measurements compared to the Yes Group.
+
+As for occiput-to-wall, the IQRs are not very distinguishable, but there is a further spread of right-side points compared to the Yes Group.
+
+All groups appear to vary in terms of skewness magnitude, but from lumbar flexion to chest expansion to occiput-to-wall, the skewness scales to be more prominent. With occiput-to-wall in particular, the distribution is nearly defined completely by outer points.
+
+Overall, it appears from the initial comparisons that the pain screening prolonged over the weeks with the 'Yes' group are associated with specific physical mobility measurement differences. Relationships between reported symptoms and physical mobility could vary by anatomical region and the type of measurement being considered.
+
+In terms of the measurements specifically, the groups split in ways that are consistent with the idea that participants with reported prolonged pain or stiffness have more unfavorable spinal mobility measurements. It doesn't confirm our expectations, though, it simply aligns with it.
+
+The averages for lumber flexion and chest expansion were slightly lower for the group claiming prolonged pain or stiffness, and the group also had a slightly greater average occiput-to-wall distance.
+
+There's an argument for association, but it requires further investigation to clarify if such associations vary by anatomical location.
+
+---
+
+## Examining Frequencies in Pain Regions
+
+For the 'yes' group in the prior examination, the following table and bar plot will compare the frequencies of reported regions where participants were experiencing prolonged pain or stiffness.
+
+## Addressing NAs
+
+```{r}
+cat("Missing responses by pain region\n")
+
+sum(is.na(clean_data$site_neck))
+sum(is.na(clean_data$site_upper_back))
+sum(is.na(clean_data$site_mid_back))
+sum(is.na(clean_data$site_low_back))
+sum(is.na(clean_data$site_buttocks))
+sum(is.na(clean_data$site_hip))
+sum(is.na(clean_data$site_rib_cage))
+```
+As observed from the last check, we had 3516 people who were in the 'no' group, and 2 people who were NA. This matches up to all of the observations here having 3518 NA values. Hence, why we are specifically examining the 'yes' group for such data.
+
+## Prolonged Pain or Stiffness Region Frequency Examinations
+
+```{r}
+cat("Neck pain\n")
+table(yes_group$site_neck, useNA = "ifany")
+
+cat("\nUpper back pain\n")
+table(yes_group$site_upper_back, useNA = "ifany")
+
+cat("\nMid back pain\n")
+table(yes_group$site_mid_back, useNA = "ifany")
+
+cat("\nLower back pain\n")
+table(yes_group$site_low_back, useNA = "ifany")
+
+cat("\nButtocks pain\n")
+table(yes_group$site_buttocks, useNA = "ifany")
+
+cat("\nHip pain\n")
+table(yes_group$site_hip, useNA = "ifany")
+
+cat("\nRib cage pain\n")
+table(yes_group$site_rib_cage, useNA = "ifany")
+```
+Here are our percentages for each region's reported pain being 'yes':
+
+| Lower Back: 65.8%
+| Neck: 35.7%
+| Buttocks: 30.0%
+| Upper Back: 22.0%
+| Mid Back: 20.9%
+| Hip: 16.3%
+| Rib Cage: 5.1%
+
+So far, it appears pain seems to circulate commonly in the neck and overall back regions, with the hip and rib cage being less common.
+The group wtih prolonged pain numbers at 1483, which is what the percents are based on.
+
+Here's a bar plot with the table data:
+
+```{r}
+pain_frequencies <- c(
+  Neck = sum(yes_group$site_neck == TRUE, na.rm = TRUE),
+  Upper_Back = sum(yes_group$site_upper_back == TRUE, na.rm = TRUE),
+  Mid_Back = sum(yes_group$site_mid_back == TRUE, na.rm = TRUE),
+  Lower_Back = sum(yes_group$site_low_back == TRUE, na.rm = TRUE),
+  Buttocks = sum(yes_group$site_buttocks == TRUE, na.rm = TRUE),
+  Hip = sum(yes_group$site_hip == TRUE, na.rm = TRUE),
+  Rib_Cage = sum(yes_group$site_rib_cage == TRUE, na.rm = TRUE)
+)
+
+pain_frequencies <- sort(pain_frequencies, decreasing = TRUE)
+
+par(mar = c(8, 6, 5, 2))
+
+barplot(
+  pain_frequencies,
+  main = "Reported Pain by Anatomical Region",
+  xlab = "Pain Region",
+  ylab = "Number of Participants",
+  col = "red",
+  las = 2,
+  ylim = c(0, max(pain_frequencies) * 1.25),
+  cex.main = 1,
+  line = 2
+)
+```
+This will help provide some descriptive context for upcoming studies, but as of now, knowing their particular frequencies isn't a major concern.
+
+What would be significant to observe, would be how many regions the participants are suffering prolonged pain or stiffness with. Perhaps a majority are actually pertaining to only one or all of them, and that would provide insights to gauge pain or stiffness coverage. The survey did permit participants to mark all that applied.
+
+The following plot aims to outline how many regions participants reported to be suffering from:
+
+```{r}
+pain_regions <- yes_group[, c(
+  "site_neck",
+  "site_upper_back",
+  "site_mid_back",
   "site_low_back",
+  "site_buttocks",
+  "site_hip",
+  "site_rib_cage"
+)]
+
+valid_regions <- pain_regions[complete.cases(pain_regions), ]
+region_count <- rowSums(valid_regions)
+
+region_frequencies <- table(region_count)
+
+barplot(
+  region_frequencies,
+  main = "Number of Reported Pain Regions",
+  xlab = "Number of Pain Regions",
+  ylab = "Number of Participants",
+  names.arg = names(region_frequencies),
+  col = "red"
+)
+
+region_frequencies <- table(region_count)
+region_frequencies
+```
+From the bar graph, it appears a vast majority of the group with prolonged pain or stiffness is suffering from one particular region, rather than having broad coverage across their body. In layman terms, the data is right skewed. Naturally, the amount of regions declines in frequency as regions grow more numerous, which clarifies that we aren't dealing with a dataset of participants clustered into uncommon coverages.
+
+As for if this potentially represents the American population, we'd have to consider matters with variable weights and design adjustments if we were to make such a claim. The research question is particularly focused on NHANES participants, so that is a separate consideration.
+
+---
+
+## Physical Examination Comparisons for Prolonged One-Region Pain Participants
+
+To connect the frequencies of prolonged region pain or suffering to their physical examinations, we'll be examining the participants that suffer symptoms from only one region, instead of multiple.
+
+We'll split the 1-region participants based on what anatomical region they're suffering in, and cross-compare their measurement statistics with boxplots. Considering prior observations with specific anatomical regions having differing magnitudes between 'yes' and 'no' groups, it's also possible such logic may also extend to independent anatomical regions.
+
+```{r}
+valid_regions <- pain_regions[complete.cases(pain_regions), ]
+region_count <- rowSums(valid_regions)
+one_region <- valid_regions[region_count == 1, ]
+
+region_names <- c(
+  "Neck", "Upper back", "Mid back", "Lower back",
+  "Buttocks", "Hip", "Rib cage"
+)
+
+one_region$only_region <- factor(
+  region_names[max.col(as.matrix(one_region), ties.method = "first")],
+  levels = region_names
+)
+
+table(one_region$only_region)
+```
+
+```{r}
+single_region_freq <- table(one_region$only_region)
+single_region_freq <- sort(single_region_freq, decreasing = TRUE)
+par(mar = c(8, 6, 5, 2))
+
+barplot(
+  single_region_freq,
+  main = "Participants Reporting Exactly One Pain Region",
+  xlab = "Pain Region",
+  ylab = "Number of Participants",
+  col = "steelblue",
+  las = 2,
+  ylim = c(0, max(single_region_freq) * 1.25),
+  cex.main = 1,
+  line = 2
+)
+```
+From the box plot (which to clarify, is not right skewed due to it being sorted), it's noted that the dominant region of pain or stiffness amongst the 1-region participants is the lower back, follwed by the neck, buttocks and hip. The other regions of the backs appear to be less common compared to specifically the lower back, so it would be better to treat the three regions of the back with specificity rather than unifying them as one singular region.
+
+## Comparing Anatomic Regions: Physical Examination Measurements
+
+```{r}
+regions <- c(
+  "site_neck",
+  "site_upper_back",
+  "site_mid_back",
+  "site_low_back",
+  "site_buttocks",
+  "site_hip",
+  "site_rib_cage"
+)
+
+region_labels <- c(
+  "Neck",
+  "Upper back",
+  "Mid back",
+  "Lower back",
+  "Buttocks",
+  "Hip",
+  "Rib cage"
+)
+
+measurements <- c(
   "lumbar_flexion_cm",
   "chest_expansion_cm",
   "occiput_wall_cm"
 )
 
-sapply(eda_data[variables], function(x) {
-  sum(is.na(x))
-})
+measurement_labels <- c(
+  "Lumbar Flexion (cm)",
+  "Chest Expansion (cm)",
+  "Occiput-to-Wall Distance (cm)"
+)
 
+for (m in seq_along(measurements)) {
+
+  par(
+    mfrow = c(2, 4),
+    mar = c(5, 4, 3, 1),
+    oma = c(0, 0, 3, 0)
+  )
+
+  for (i in seq_along(regions)) {
+
+    boxplot(
+      yes_group[[measurements[m]]] ~ yes_group[[regions[i]]],
+      main = region_labels[i],
+      xlab = "Pain reported",
+      ylab = measurement_labels[m],
+      names = c("No", "Yes"),
+      col = c("darkblue", "darkred")
+    )
+  }
+
+  mtext(
+    paste(measurement_labels[m], "by Reported Pain Region"),
+    outer = TRUE,
+    line = 1,
+    cex = 1.2
+  )
+}
 ```
+| Lumbar Flexion
+Amongst the 7 regions for lumbar flexion, the box plots do resemble the original overall lumbar flexion boxplot in terms of distribution and IQR.
+- For all regions except for buttocks, the median in the 'yes' group is higher than the 'no' group. For buttocks, it's relatively equal.
+- The IQR is quite equal in most regions, except for buttocks, with a noticeable IQR shift to the right for the 'no' group compared to the 'yes' group. The IQR for rib cage is also larger in the 'no' group than the 'yes' group.
+- The whiskers are virtually equal due to the similar IQRs, but in all regions except for the lower back, there are more high observations beyond the right whisker in the 'no' region than the 'yes' region.
+- For the back regions however, lumbar flexion in the 'yes' group for the lower back is greater in outlier abundance, as opposed to the upper and mid backs with more outliers in the 'no' group. This may be associated with the difference in frequencies though, but it may also imply an actual difference with lumbar flexion depending on the region of the back.
 
-## Summary Statistics
+Overall, most of the regions for lumbar flexion share the same similarities with little variation.
+
+| Chest Expression
+For chest expression, it too has very similar IQR and whisker ranges altogether.
+- Median in the 'yes' group is slightly greater in the neck, upper back, mid back and lower back.
+- Contrary, buttocks, hips and rib cage have either equal or smaller medians in the 'yes' group compared to the 'no' group.
+- Whiskers differ in length with lower back, buttocks, hip and rib cage, where the 'yes' group has a shorter whisker range.
+- Each region is relatively unique in terms of its outlier distribution. Some have more points in one group like upper back being right skewed in the 'no' group, others have better spread with a similar count of outliers like the 'yes' group in the hip, and other variations exist that vary the overall ranges of the boxplots.
+
+Compared to lumbar flexion, regions seem to have more distinguished variations for chest expansion, which may imply some form of association between chest expansion and the region of prolonged pain or stiffness. The lower-back, buttocks, hip and rib-cage comparisons have a lower average expansion among the 'yes' group.
+
+| Occiput-to-Wall Distance
+- As with the original overall boxplot, the distributions  are very right skewed, with the medians up against the left side of the distribution compared to the abundance of outliers in all plots. The outlier distributions and quantities do vary however, with regions like the upper and mid backs, hip and rib cage having differing ranges.
+- Rib cage in particular has only a few outliers in its 'yes' group compared to the 'no' group, though this could be because it is the least frequent reported region for pain or stiffness.
+- In most cases however, the 'no' group seems to have a simple majority in terms of outlier abundance.
+
+It could be stated that there is variation between these regions for occiput-to-wall distance, but it would likely require a more precise approach with summaries and case-by-case counts. The median and IQR aren't enough to properly distinguish all of these regions, so the differences within their tails may be more significant. We may also have to consider proportions instead of quantities.
+
+For all of the regions presented, as well as the measurement explored, it's noted that in most cases that differences between the 'yes' and 'no' groups are more pronounced as the frequency of participants in that region are lessened. The 'yes' groups appear to be smaller as the frequency of that particular region declines, making sample size a distinctive trait that puts to question differences anatomically.
+
+Overall though, it is a considerable possibility that the boxplot results from these measurements may challenge the association of regional prolonged pain and stiffness with the results from physical examinations. A missing piece for understanding how these may pertain to one another, is by examining a portion of a dataset with a lack of prolonged pain or stiffness and their measurements. If the groups seem to have similar boxplots, the argument could be made that association may be inconclusive.
+
+As of now, with these plots, mobility measurements are not clearly separated according to pain location, which does not support association. We can use mathematical approaches later on to verify if these interpretations are supported.
+
+Everything here will be expanded on and further explored with more visualizations.
+
+---
+
+## SECTION 2
+## Demographic Explanations for Differences in Reported Prolonged Pain or Stiffness and Measurements
+
+Alongside investigating how the physical examinations may be associated with reported prolonged pain or stiffness, we'll be exploring confounding demographic variables that may potentially yield stronger or challenging explanations for the relationships we discover in previous observations.
 
 ```{r}
-# Lumbar flexion
-summary_by_group(eda_data, "lumbar_flexion_cm")
-
-# Chest expansion
-summary_by_group(eda_data, "chest_expansion_cm")
-
-# Occiput-to-wall distance
-summary_by_group(eda_data, "occiput_wall_cm")
-
+head(clean_data[c("age_years", "bmi", "sex", "race_ethnicity")])
 ```
 
-## Visualizations
+As established before, the ages of the dataset range from 20-69.
+
+We'll be investigating BMI, sex and ethnicity as other explanatory variables alongside age, as well as seeing their general distributions.
 
 ```{r}
-# Lumbar Flexion boxplot
-plot_group_box(eda_data,"lumbar_flexion_cm","Lumbar Flexion (cm)")
+cat("Summary of Age\n")
+summary(clean_data$age_years)
 
-# Chest expansion boxplot
-plot_group_box(eda_data,"chest_expansion_cm","Chest Expansion (cm)")
+cat("Summary of BMI\n")
+summary(clean_data$bmi)
 
-# Occiput-to-wall boxplot
-plot_group_box(eda_data,"occiput_wall_cm","Occiput-to-Wall Distance (cm)")
+cat("Summary of Sex\n")
+summary(clean_data$sex)
+prop.table(table(clean_data$sex)) * 100
 
-# Lumbar flexion histogram
-plot_histogram(eda_data,"lumbar_flexion_cm","Lumbar Flexion (cm)")
+cat("Summary of Race/Ethnicity\n")
+summary(clean_data$race_ethnicity)
+prop.table(table(clean_data$race_ethnicity)) * 100
+
+sum(is.na(clean_data$age_years))
+sum(is.na(clean_data$bmi))
+sum(is.na(clean_data$sex))
+sum(is.na(clean_data$race_ethnicity))
+```
+BMI has 39 missing data values, so we'll make sure to exclude them when computing visualizations.
+The average age is 43.8, and the average BMI is 29.29.
+BMI seems to have an outlier of 84.87, which is substantially higher compared to the remaining data for BMI. The data for BMI may be right-skewed.
+There also seems to be a simple majority of female participants in the survey, by around 160.
+As for race/ethnicity, a majority of the participants are non-hispanic White, at 44.11%. The remaining subgroups are 20% and below, with Non-Hispanic Black, Other Hispanic and Mexican American, as well as an option for Other. There may be ethnic disparities in the data despite the survey aiming for more sampling in specific ethnic groups and other subgroups.
+
+## Age Distribution
+
+```{r}
+mean(clean_data$age_years, na.rm = TRUE)
+median(clean_data$age_years, na.rm = TRUE)
+
+plot_histogram(clean_data, "age_years", "Age (years)")
+```
+
+The participants are between 20 and 69 years old, and their average/mean age is about 43.83 years while our median age is 44. Based on the distribution in the histogram, it appears the data is relatively unique, perhaps being slightly skewed to the right. A majority of the participants appear to be around 20-22, with lesser data at the right bound for 69. It's possible that the absence of data past 69 was an explicit design constraint, and it was never up for consideration for this particular survey.
+
+## BMI Distribution
+
+```{r}
+mean(clean_data$bmi, na.rm = TRUE)
+median(clean_data$bmi, na.rm = TRUE)
+
+plot_histogram(clean_data, "bmi", "BMI")
+```
+
+The average/mean BMI is about 29.29 while our median is 28.19. Our histogram shows the BMI Distribution of our participants, the frequency of participants in each BMI range. We can clearly see how this histogram is skewed right, with a bulk of our data concentrating around a BMI of 20-35, the participants aren't restricted to a single bin range like standard, overweight or underweight. Some participants in particular are extreme outliers, numbering from 60 to 80, which may impose unique anomalies compared to the rest of the distribution.
+
+## Sex Distribution
+
+```{r}
+get_category_info(clean_data, "sex")
+plot_category_bar(clean_data, "sex", "Sex")
+```
+
+There are 2,418 male participants and 2,583 female participants. Both are almost equal, but females have 165 more participants than males participants. Because sex tends to be distinctive as a biological attribute, it may be worth separating the two for some analyses to see if they differ when it comes to questionnaire responses or physical examinations. They can still be studied as one sex-blind group, but it would be worth investigating differences.
+
+## Race/Ethnicity Distribution
+
+```{r}
+get_category_info(clean_data, "race_ethnicity")
+plot_category_bar(clean_data, "race_ethnicity", "Race/Ethnicity", horizontal = TRUE)
+```
+
+The largest group in our dataset is Non-Hispanic White, with our runner-ups being Mexican American and Non-Hispanic Black participants. The groups have different sample sizes, which is useful to know before we finalize results with all our data and groups. The survey was aimed to have more data when it came to minority ethnicities, though it appears that a majority of participants were Caucasian. We'll have to consider if there may be differences between ethnicities when it comes to health, though such readings would require strong contextualization since ethnicity itself isn't a sound judgment for health. Regardless, it's important to have good ethnic coverage in surveys so it can be arguably generalized for a population, since not everyone in America is Caucasian, and claims could be made toward biased analyses. However for the research question, this is a separate matter that is different from finding association.
+
+## Summary
+
+Overall, with age being a relatively uniform distribution, the variables BMI, ethnicity and sex have significant sample differences. It's not established yet if these variables have any association with reported prolonged pain or stiffness, nor is it known if they relate to measurements. The next natural step is to bring in the arugments of the research question to see how they compare.
+
+---
+
+```{r}
+eda_data <- create_low_back_group(clean_data)
+
+yes_group <- eda_data[eda_data$low_back_group == "Yes", ]
+no_group  <- eda_data[eda_data$low_back_group == "No", ]
+
+table(eda_data$low_back_group, useNA = "ifany")
+```
+Re-verifying a detail from before with the proportion of people who reported prolonged pain or stiffness.
+
+
+```{r}
+summary_by_group(eda_data, "age_years")
+summary_by_group(eda_data, "bmi")
+```
+
+It appears that the 'yes' group is older on average; a median 3 years higher than the 'no' group.
+This could be a potential explanatory variable for spinal mobility.
+
+```{r}
+plot_group_box(eda_data, "age_years", "Age (years)")
+plot_group_box(eda_data, "bmi", "BMI")
+```
+For the age boxplot, the IQR for the 'yes' group is slightly narrower, but further to the right, as opposed to the 'no' group.
+The median of the 'yes' group is slightly higher, supporting by median that those with prolonged pain or stiffness tend to be older.
+```{r}
+table(eda_data$low_back_group, eda_data$sex)
+
+prop.table(table(eda_data$low_back_group, eda_data$sex), margin = 1) * 100
+
+table(eda_data$low_back_group, eda_data$race_ethnicity)
+
+prop.table(table(eda_data$low_back_group, eda_data$race_ethnicity), margin = 1) * 100
 ```
 
 

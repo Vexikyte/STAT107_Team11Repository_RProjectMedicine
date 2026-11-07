@@ -5,7 +5,7 @@ output: html_document
 
 ## Loading the Data
 
-Before looking at back pain and spinal measurements, we want to see who and what type of people are in our dataset. We will look into our age, BMI, sex, and race/ethnicity varaibles.
+Before looking at back pain and spinal measurements, we want to see who and what type of people are in our dataset. We will look into our age, BMI, sex, and race/ethnicity variables.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
@@ -47,7 +47,7 @@ median(clean_data$age_years, na.rm = TRUE)
 plot_histogram(clean_data, "age_years", "Age (years)")
 ```
 
-The participants are between 20 and 69 years old, and their average/meann age is about 43.83 years while our median age is 44. The histogram helps us see the age ranges of our participants.
+The participants are between 20 and 69 years old, and their average/mean age is about 43.83 years while our median age is 44. Based on the distribution in the histogram, it appears the data is relatively unique, perhaps being slightly skewed to the right. A majority of the participants appear to be around 20-22, with lesser data at the right bound for 69. It's possible that the absence of data past 69 was an explicit design constraint, and it was never up for consideration for this particular survey.
 
 ## BMI Distribution
 
@@ -58,7 +58,7 @@ median(clean_data$bmi, na.rm = TRUE)
 plot_histogram(clean_data, "bmi", "BMI")
 ```
 
-The average/mean BMI is about 29.29 while our median is 28.19. Our histogram shows the BMI Distribution of our participants, the frequency of participants in each BMI range. We can clearly see how this historgram is skewed right.
+The average/mean BMI is about 29.29 while our median is 28.19. Our histogram shows the BMI Distribution of our participants, the frequency of participants in each BMI range. We can clearly see how this histogram is skewed right, with a bulk of our data concentrating around a BMI of 20-35, the participants aren't restricted to a single bin range like standard, overweight or underweight. Some participants in particular are extreme outliers, numbering from 60 to 80, which may impose unique anomalies compared to the rest of the distribution.
 
 ## Sex Distribution
 
@@ -67,7 +67,7 @@ get_category_info(clean_data, "sex")
 plot_category_bar(clean_data, "sex", "Sex")
 ```
 
-There are 2,418 male participants and 2,583 female participants. Both are almost equal, but females have 165 more participants than males participants.
+There are 2,418 male participants and 2,583 female participants. Both are almost equal, but females have 165 more participants than males participants. Because sex tends to be distinctive as a biological attribute, it may be worth separating the two for some analyses to see if they differ when it comes to questionnaire responses or physical examinations. They can still be studied as one sex-blind group, but it would be worth investigating differences.
 
 ## Race/Ethnicity Distribution
 
@@ -76,8 +76,8 @@ get_category_info(clean_data, "race_ethnicity")
 plot_category_bar(clean_data, "race_ethnicity", "Race/Ethnicity", horizontal = TRUE)
 ```
 
-The largest group in our dataset is Non-Hispanic White, with our runnerups being Mexican American and Non-Hispanic Black participants. The groups have different sample sizes, which is useful to know before we compare results with all our data and groups.
+The largest group in our dataset is Non-Hispanic White, with our runner-ups being Mexican American and Non-Hispanic Black participants. The groups have different sample sizes, which is useful to know before we compare results with all our data and groups. The survey was aimed to have more data when it came to minority ethnicities, though it appears that a majority of participants were Caucasian. We'll have to consider if there may be differences between ethnicities when it comes to health, though such readings would require strong contextualization since ethnicity itself isn't a sound judgment for health. Regardless, it's important to have good ethnic coverage in surveys so it can be arguably generalized for a population, since not everyone in America is Caucasian, and claims could be made toward biased analyses.
 
 ## Summary
 
-These graphs give us a background overview of the participants in our dataset. They show how age, BMI, sex, and race/ethnicity are distributed before we compare reported back pain with spinal examination measurements in `21_EDA.Rmd`.
+These graphs give us a background overview of the participants in our dataset. They show how age, BMI, sex, and race/ethnicity are distributed before we compare reported back pain with spinal examination measurements in `21_EDA.Rmd`. With a relatively balanced distribution of age groups and gender, we'll focus our studies towards how BMI may correlate to responses and symptoms, as well as if ethnicity is a realistic variable to consider for differing conditions.
