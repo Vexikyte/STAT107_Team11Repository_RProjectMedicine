@@ -1,29 +1,158 @@
 ---
-title: "FinalReport"
-output: html_document
-date: "2026-11-04"
+title: "Back Pain and Spinal Mobility in U.S. Adults: An NHANES 2009-2010 Analysis"
+author: "Team 11: Ethan Ballada, Muhammad Cheema, Nitesh Kanathala"
+date: "2026-11-06"
+output: pdf_document
 ---
 
+
+
+
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE,
+                      fig.align = "center", fig.width = 6, fig.height = 4)
+source("00_requirements.R")
+source("03_funct_EDA.R")
+load("12_DataSaving.RData")
+eda_data <- create_low_back_group(clean_data)
 ```
 
-## R Markdown
+# Abstract
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+[Write last, 200 words or less: our question, our data, and what the EDA has shown so far.]
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+# Introduction
 
-```{r cars}
-summary(cars)
+Back pain is one of the most common health problems among adults, and in some cases it can be linked to conditions that make the spine stiffer over time. Doctors often measure how well the spine moves to help find these conditions, but it is not always clear whether people who report back pain actually measure differently from people who do not. Our project asks: **Is reported back pain associated with differences in spinal mobility measurements among NHANES participants aged 20 to 69?**
+
+To answer this, we compare people who reported prolonged low-back symptoms with people who did not, using three spinal measurements from a physical exam: lumbar flexion, chest expansion and occiput-to-wall distance. Because age, sex and height also affect how the spine moves, we include them so the comparison between groups is fair. This analysis could help doctors and researchers understand whether self-reported back pain lines up with measurable changes in the spine, which matters for how back pain is screened. Our goal is to test whether the groups differ, and to see how much of any difference remains after accounting for age, sex and body size.
+
+# Executive Summary
+
+- [Finding from the lumbar flexion comparison.]
+- [Finding from the chest expansion comparison.]
+- [Finding from the occiput-to-wall comparison.]
+- The sample is close to evenly split by sex (2,418 men and 2,583 women), and participants range from 20 to 69 years old with an average age of about 44.
+
+# Data
+
+## What is NHANES, and why is the data credible for our research topic?
+
+The datasets featured in the study were obtained via the National Health and Nutrition Examination Survey (NHANES), with the collection of the data being conducted by the CDC's National Center for Health Statistics. Data collection within NHANES is aimed to study a wide variety of health and medicinal topics across the U.S., not just the project's study of arthritis. The survey and examinations cover the arthritis survey cycle from 2009 to 2010, with examinees being adults ranging from age 20 to 69, with the data aimed to examine and study the health and nutritional status of the civilian, noninstitutionalized U.S. population. NHANES has been recognized for conducting continuous health surveys since 1999 with 2-year cycles, using a stratified multistage probability sampling approach to obtain a wide diversity of data. Demographic groups such as ethnic populations, age brackets and income differences were featured to have sufficiently large samples for diverse subgroups, using sampling weights to have subgroups statistically accountable for how they may represent the population, since some groups are deliberately oversampled to emphasize specific health characteristics. Overall, the organization and methodologies used for the data should allow sufficient research for the topic, since it provides a standardized and diverse source with surveys heavily considerate of representation and subgroup analysis.
+
+## Datasets
+
+We used four datasets from the NHANES 2009-2010 cycle for this project.
+
+- **ARQ_F:** The arthritis questionnaire, which has 5,106 participants
+- **ARX_F:** The arthritis body exam, which measures spinal mobility for 5,001 participants
+- **DEMO_F:** Demographic info like age, sex, race/ethnicity, pregnancy status and survey weights
+- **BMX_F:** Body measurements like height, weight and BMI
+
+All four datasets share the `SEQN` column, so we used it to join them together. Having both the questionnaire and the exam lets us compare what people said about their back pain with how their spine actually measured. We added the demographic and body measurement data later because things like age, sex and height naturally affect spinal mobility, so we need them to make fair comparisons between people.
+
+## Data Cleaning
+
+First, we merged the questionnaire and exam datasets using an inner join, so we only kept people who were in both. This left us with 5,001 participants, and 105 people were dropped because they took the questionnaire but didn't have exam data. All 5,001 of them were also in the demographic and body measurement datasets, so we didn't lose anyone when we added those. We also checked that every ID was unique.
+
+After merging, we cleaned the data in a few steps:
+
+- **Refused and "Don't know" answers:** NHANES codes these as 7 and 9, which could get mistaken for real answers. We changed them to missing values in the survey questions, which affected between 2 and 13 answers per question.
+- **Skipped questions:** A lot of the blank values aren't actually missing data. People who said they didn't have chronic back pain were never asked the follow-up symptom questions. We also found 85 people who did report back pain but only marked their hip or rib cage, so the survey skipped them past those questions too. We made a variable called `symptoms_asked` to keep track of who actually got asked.
+- **Incomplete exams:** 4,566 people finished the full spinal exam, 385 finished part of it and 50 didn't finish it. We kept the partial exams since the measurements they did get are still usable.
+- **Removing variables:** We took out the comment columns and the xiphoid notch distance, since they describe how a measurement was taken and not the measurement itself.
+- **Making it readable:** We renamed the variables so they make sense (for example, `ARDDINEX` became `chest_expansion_cm`) and turned the number codes into labeled categories.
+
+At the end, we checked that we didn't lose any participants or real answers, and that chest expansion matched the inhale minus exhale measurement for everyone. A few chest expansion values were really high (up to 18.5 cm), but we kept them because we couldn't prove they were mistakes. 68 participants were pregnant during the exam, so we kept track of that in case it matters for the analysis. Height was missing for 33 people and BMI was missing for 39.
+
+## Variables, Observations and Data Substantiality
+
+After data cleaning was completed, 5,001 observations remained with 37 variables. There were originally 201 variables, but 164 columns were removed due to having little association with the research question we aimed to answer, or were better represented by proxy within other variables.
+
+Apart from our renamed `id` variable to keep track of individual participants, most of our variables can be grouped into categories. On the surface, we have demographic variables for age, sex, ethnicity, height, weight, BMI, and with particular interest, pregnancy. From the questionnaire, participants reported which musculoskeletal sites they had back pain around, from areas like the neck down to the buttocks, as well as various regions of their backs. Data for specific symptoms and conditions were also provided, such as when patients felt pain, if they felt more pain or relief during or after particular events or activities, if they had specific additional conditions like Crohn's disease, and more. Physical examination data pertained to specific centimeter measurements like inhaling, exhaling, chest expansion and lumbar flexion.
+
+It is important to note that not all patients had responses or data for some of these particular questions or examinations. Some patients didn't answer follow-up symptom questions from prior questions, and physical examinations are not always wholly complete. It will be important to account for which variables may poorly represent the sample size on their own, and to ensure subgroups are accounted for to preserve accurate analysis.
+
+# Visualization
+
+## Who is in our data?
+
+```{r}
+plot_histogram(clean_data, "age_years", "Age (years)")
 ```
 
-## Including Plots
+Participants range from 20 to 69 years old, with a mean age of about 43.8 and a median of 44.
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+plot_histogram(clean_data, "bmi", "BMI")
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+The mean BMI is about 29.3 and the median is 28.2, and the distribution is skewed right.
+
+```{r}
+plot_category_bar(clean_data, "sex", "Sex")
+```
+
+There are 2,418 male and 2,583 female participants, so the two groups are close in size.
+
+```{r, fig.width = 7}
+plot_category_bar(clean_data, "race_ethnicity", "Race/Ethnicity", horizontal = TRUE)
+```
+
+The largest group is Non-Hispanic White, followed by Mexican American and Non-Hispanic Black participants. Since the groups differ in size, this is useful to know before comparing results across them.
+
+## Spinal mobility by low-back symptoms
+
+We split participants into two groups: those who reported prolonged low-back symptoms, and those who did not.
+
+```{r}
+knitr::kable(table(eda_data$low_back_group, useNA = "ifany"),
+             col.names = c("Low-back symptoms", "Participants"))
+```
+
+```{r}
+knitr::kable(summary_by_group(eda_data, "lumbar_flexion_cm"),
+             caption = "Lumbar flexion (cm) by low-back symptoms")
+plot_group_box(eda_data, "lumbar_flexion_cm", "Lumbar Flexion (cm)")
+```
+
+[What the lumbar flexion boxplot shows.]
+
+```{r}
+knitr::kable(summary_by_group(eda_data, "chest_expansion_cm"),
+             caption = "Chest expansion (cm) by low-back symptoms")
+plot_group_box(eda_data, "chest_expansion_cm", "Chest Expansion (cm)")
+```
+
+[What the chest expansion boxplot shows.]
+
+```{r}
+knitr::kable(summary_by_group(eda_data, "occiput_wall_cm"),
+             caption = "Occiput-to-wall distance (cm) by low-back symptoms")
+plot_group_box(eda_data, "occiput_wall_cm", "Occiput-to-Wall Distance (cm)")
+```
+
+[What the occiput-to-wall boxplot shows. Most people measure 0 cm here, which is the normal result.]
+
+```{r}
+plot_histogram(eda_data, "lumbar_flexion_cm", "Lumbar Flexion (cm)")
+```
+
+[What the lumbar flexion histogram shows.]
+
+## Further visualizations
+
+Next, we plan to make scatterplots of each spinal measurement against age, colored by low-back symptom group, to see whether mobility declines with age at the same rate in both groups. We will also make side-by-side boxplots split by sex, since men and women may differ in spinal mobility.
+
+# Analysis
+
+Our next steps are to formally test whether the differences we see in the plots are real or could be due to chance:
+
+- **Two-sample tests:** We will use two-sample t-tests to compare mean lumbar flexion and chest expansion between the low-back symptom groups. Because occiput-to-wall distance is mostly 0, we will instead compare the proportion of people with a value above 0 using a chi-square test.
+- **Multiple linear regression:** We will model lumbar flexion and chest expansion using low-back symptom group, age, sex and height as predictors. This shows whether the symptom group still matters after accounting for the factors that naturally affect spinal mobility.
+- **Logistic regression:** For occiput-to-wall distance, we will model whether a person has an abnormal value (above 0) using the same predictors.
+- **Checking our results:** We will rerun the models without the unusually high chest expansion values and without pregnant participants, to make sure these do not change our conclusions. We also plan to use the NHANES survey weights so our results better represent the U.S. population.
+
+We expect that people with low-back symptoms will show somewhat lower lumbar flexion, but that age will explain much of the difference in spinal mobility overall.
+```
+
