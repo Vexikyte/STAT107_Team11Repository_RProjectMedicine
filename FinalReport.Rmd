@@ -17,22 +17,26 @@ load("12_DataSaving.RData")
 eda_data <- create_low_back_group(clean_data)
 ```
 
+# Executive Summary
+
+- Of 4999 participants from the dataset, 19.48% of the dataset; or 974 participants, had reported prolonged pain or stiffness with regions of their backs, necks or hips.
+- 1481 participants in the dataset had valid responses to regional pain inquiries, and among them, it was discovered that 65.8% of them reported lower-back pain for their most frequent region of pain or stiffness. This was followed by neck pain at 35.7%, and buttocks pain at 30%. It’s noted that participants were permitted to select all regions that applied, for such symptoms are not exclusive to one area.
+- Substantial overlap was discovered during initial comparisons for the physical examination measurements. Comparing the regions themselves had also provided limited visual evidence of consistent differences in mobility in correspondence to their respective pain regions.
+- The participants that met the criteria for the pain or stiffness screening had on average, higher age and BMI. These will warrant future exploratory analysis.
+
+Much of the results are preliminary, and as such, may be adjusted or revised in the future if evidence argues against existing interpretations.
+
 # Abstract
 
-[Write last, 200 words or less: our question, our data, and what the EDA has shown so far.]
+The study will examine if reported pain regions from an NHANES survey are associated with differences in spinal mobility measurements for participants aged 20-69 during the 2009-2010 survey cycle. The dataset is a combination of questionnaire responses and physical examination data, specifically focusing on lumbar flexion, chest expansion and occiput-to-wall distance for non-subjective data. It will be investigated if subjective reports of prolonged pain or stiffness correspond to observable differences in physical mobility. Demographic considerations will also be investigated to scrutinize confounding variables.
+
+The dataset was split into two binary groups; the ‘yes’ group being those that reported 6 weeks of prolonged pain or stiffness, and the ‘no’ group being those that didn’t. For the existing data interpretations and results, there is substantial overlap in mobility measurements between those that met the criteria versus those that didn’t. Individual regions of pain or stiffness were investigated, but the comparisons had limited evidence of separation. There were however some variations noted within chest expansion and occiput-to-wall measurement distribution. Demographic comparisons have also revealed potentially significant differences in age, BMI and race/ethnicity that may exist as explanatory confounding variables for what we learn, with sex being relatively equal in quantity.
 
 # Introduction
 
 Back pain is one of the most common health problems among adults, and in some cases it can be linked to conditions that make the spine stiffer over time. Doctors often measure how well the spine moves to help find these conditions, but it is not always clear whether people who report back pain actually measure differently from people who do not. Our project asks: **Is reported back pain associated with differences in spinal mobility measurements among NHANES participants aged 20 to 69?**
 
 To answer this, we compare people who reported prolonged low-back symptoms with people who did not, using three spinal measurements from a physical exam: lumbar flexion, chest expansion and occiput-to-wall distance. Because age, sex and height also affect how the spine moves, we include them so the comparison between groups is fair. This analysis could help doctors and researchers understand whether self-reported back pain lines up with measurable changes in the spine, which matters for how back pain is screened. Our goal is to test whether the groups differ, and to see how much of any difference remains after accounting for age, sex and body size.
-
-# Executive Summary
-
-- [Finding from the lumbar flexion comparison.]
-- [Finding from the chest expansion comparison.]
-- [Finding from the occiput-to-wall comparison.]
-- The sample is close to evenly split by sex (2,418 men and 2,583 women), and participants range from 20 to 69 years old with an average age of about 44.
 
 # Data
 
@@ -146,13 +150,16 @@ Next, we plan to make scatterplots of each spinal measurement against age, color
 
 # Analysis
 
-Our next steps are to formally test whether the differences we see in the plots are real or could be due to chance:
+For the next steps that will be taken to further examine the differences we observed in our EDA, we'll be using various models and approaches to challenge or support if our findings were meaningful statistical associations or explained by other conclusions.
 
-- **Two-sample tests:** We will use two-sample t-tests to compare mean lumbar flexion and chest expansion between the low-back symptom groups. Because occiput-to-wall distance is mostly 0, we will instead compare the proportion of people with a value above 0 using a chi-square test.
-- **Multiple linear regression:** We will model lumbar flexion and chest expansion using low-back symptom group, age, sex and height as predictors. This shows whether the symptom group still matters after accounting for the factors that naturally affect spinal mobility.
-- **Logistic regression:** For occiput-to-wall distance, we will model whether a person has an abnormal value (above 0) using the same predictors.
-- **Checking our results:** We will rerun the models without the unusually high chest expansion values and without pregnant participants, to make sure these do not change our conclusions. We also plan to use the NHANES survey weights so our results better represent the U.S. population.
+| Two-Sample Comparisons: Lumbar flexion and chest expansion can be compared between the participants that met the prolonged pain or stiffness criteria, against those that didn't meet said criteria. Since occiput-to-wall distance has IQRs concentrated into 0s, differences in their proportions may be more significant to study instead of an overall perspective.
 
-We expect that people with low-back symptoms will show somewhat lower lumbar flexion, but that age will explain much of the difference in spinal mobility overall.
+| Multiple Linear Regression: Modelling lumbar flexion and chest expansion with demographic characteristics as predictors may help examine if the discovered differences between groups continue to exist once other participant characteristics are accounted for.
+
+| Logistic Regression: Probabilities of positive occiput-to-wall measurements may differ between the groups we're screening, and we'll examine them after we account for demographic attributes.
+
+| Survey Weights: Because of how the data was obtained during the 2009-2010 NHANES survey, we may incorporate weights to account for the sampling design that was implemented at the to,e/
+
+All of the proposed analysis methods we have may be adjusted depending on what discoveries are made, especially if it's significant to scurtinize pain regions alongside the broad screening groups.
 ```
 

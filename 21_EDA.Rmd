@@ -499,43 +499,5 @@ The largest group in our dataset is Non-Hispanic White, with our runner-ups bein
 
 ## Summary
 
-Overall, with age being a relatively uniform distribution, the variables BMI, ethnicity and sex have significant sample differences. It's not established yet if these variables have any association with reported prolonged pain or stiffness, nor is it known if they relate to measurements. The next natural step is to bring in the arugments of the research question to see how they compare.
-
----
-
-```{r}
-eda_data <- create_low_back_group(clean_data)
-
-yes_group <- eda_data[eda_data$low_back_group == "Yes", ]
-no_group  <- eda_data[eda_data$low_back_group == "No", ]
-
-table(eda_data$low_back_group, useNA = "ifany")
-```
-Re-verifying a detail from before with the proportion of people who reported prolonged pain or stiffness.
-
-
-```{r}
-summary_by_group(eda_data, "age_years")
-summary_by_group(eda_data, "bmi")
-```
-
-It appears that the 'yes' group is older on average; a median 3 years higher than the 'no' group.
-This could be a potential explanatory variable for spinal mobility.
-
-```{r}
-plot_group_box(eda_data, "age_years", "Age (years)")
-plot_group_box(eda_data, "bmi", "BMI")
-```
-For the age boxplot, the IQR for the 'yes' group is slightly narrower, but further to the right, as opposed to the 'no' group.
-The median of the 'yes' group is slightly higher, supporting by median that those with prolonged pain or stiffness tend to be older.
-```{r}
-table(eda_data$low_back_group, eda_data$sex)
-
-prop.table(table(eda_data$low_back_group, eda_data$sex), margin = 1) * 100
-
-table(eda_data$low_back_group, eda_data$race_ethnicity)
-
-prop.table(table(eda_data$low_back_group, eda_data$race_ethnicity), margin = 1) * 100
-```
-
+Overall, with age being a relatively uniform distribution, the variables BMI, ethnicity and sex have significant sample differences. It's not established yet if these variables have any association with reported prolonged pain or stiffness, nor is it known if they relate to measurements. The next natural step is to bring in the arguments of the research question to see how they compare.
 

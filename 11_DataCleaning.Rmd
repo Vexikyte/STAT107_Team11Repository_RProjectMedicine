@@ -124,7 +124,7 @@ n_distinct(raw_data$SEQN)
 
 ## Cleaning Steps
 
-The merged data now has 201 columns, so we reduce it to the variables that matter for studying back pain and spinal mobility, and fix how those variables are coded.
+The merged data now has 201 columns, so we reduce it to the variables that matter for studying pain or stiffness and spinal mobility, and fix how those variables are coded.
 All of the cleaning functions used below are in `02_funct_DataCleaning.R`.
 
 ```{r}
@@ -134,8 +134,8 @@ source("02_funct_DataCleaning.R")
 ### Step 1: Check who answered the follow-up questions
 
 Blank values in this survey do not all mean the same thing.
-Most of them are skip patterns: a participant who reported no chronic back pain was never asked about their symptoms, so those values are not truly missing.
-The table below compares chronic back pain (`ARQ010`) with whether the participant reached the symptom questions (`ARQ040`).
+Most of them are skip patterns: a participant who reported no chronic pain was never asked about their symptoms, so those values are not truly missing.
+The table below compares chronic pain (`ARQ010`) with whether the participant reached the symptom questions (`ARQ040`).
 
 ```{r}
 raw_data %>%
@@ -187,7 +187,7 @@ We keep status 2 participants, because their available measurements are still va
 
 ### Step 3: Keep the variables of interest
 
-We keep the main back pain questions, the pain diagram sites, the symptom questions, three related diagnoses, the spinal measurements, demographics, body measures and the survey design variables.
+We keep the main pain questions, the pain diagram sites, the symptom questions, three related diagnoses, the spinal measurements, demographics, body measures and the survey design variables.
 
 We leave out `ARXXDIST` because it records where the chest was measured and not how much the chest moved.
 We also leave out the comment columns, such as `ARIO2WD`, because they do not contain measurements.
@@ -241,7 +241,7 @@ clean_data <- recoded_data %>%
     id = SEQN,
     symptoms_asked,
 
-    # Back pain and the pain diagram
+    # General pain and the pain diagram
     back_pain = label_yes_no(ARQ010),
     site_neck       = mark_pain_site(ARQ020A, back_pain),
     site_upper_back = mark_pain_site(ARQ020B, back_pain),
